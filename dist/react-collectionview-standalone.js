@@ -9,6 +9,7 @@ var CollectionViewDatasource = require('./src/react/Datasource/CollectionViewDat
 var CollectionViewLayout = require('./src/react/Layout/CollectionViewLayout');
 var CollectionViewLayoutDelegate = require('./src/react/Layout/CollectionViewLayoutDelegate');
 var CollectionViewLayoutAttributes = require('./src/react/Layout/CollectionViewLayoutAttributes');
+var ScrollViewDelegate = require('./src/react/ScrollView/ScrollViewDelegate');
 
 //impl
 var CollectionViewFlowLayout = require('./src/react/Layout/CollectionViewFlowLayout');
@@ -21,6 +22,8 @@ var exports = {
     CollectionViewLayout: CollectionViewLayout,
     CollectionViewLayoutDelegate: CollectionViewLayoutDelegate,
     CollectionViewLayoutAttributes: CollectionViewLayoutAttributes,
+    ScrollViewDelegate: ScrollViewDelegate,
+
     Models: Models,
     Enums: require('./src/react/Enums/Enums'),
     React: require('react/addons'),
@@ -31,7 +34,7 @@ var exports = {
 module.exports = exports;
 
 
-},{"./src/react/Cell/CollectionViewCell.jsx":314,"./src/react/CollectionView.jsx":315,"./src/react/CollectionViewDelegate":316,"./src/react/Datasource/CollectionViewDatasource":317,"./src/react/Enums/Enums":319,"./src/react/Layout/CollectionViewFlowLayout":321,"./src/react/Layout/CollectionViewLayout":322,"./src/react/Layout/CollectionViewLayoutAttributes":323,"./src/react/Layout/CollectionViewLayoutDelegate":324,"./src/react/Model/Models":328,"react/addons":3}],2:[function(require,module,exports){
+},{"./src/react/Cell/CollectionViewCell.jsx":314,"./src/react/CollectionView.jsx":315,"./src/react/CollectionViewDelegate":316,"./src/react/Datasource/CollectionViewDatasource":317,"./src/react/Enums/Enums":319,"./src/react/Layout/CollectionViewFlowLayout":321,"./src/react/Layout/CollectionViewLayout":322,"./src/react/Layout/CollectionViewLayoutAttributes":323,"./src/react/Layout/CollectionViewLayoutDelegate":324,"./src/react/Model/Models":328,"./src/react/ScrollView/ScrollViewDelegate":332,"react/addons":3}],2:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -21618,13 +21621,16 @@ var CollectionViewDatasource = require('./Datasource/CollectionViewDatasource');
 var CollectionViewDelegate = require('./CollectionViewDelegate');
 var CollectionViewLayout = require('./Layout/CollectionViewLayout');
 var CollectionViewLayoutAttributes = require('./Layout/CollectionViewLayoutAttributes');
-var Models = require('./Model/Models');
+var ScrollViewDelegate = require('./ScrollView/ScrollViewDelegate');
 
+var Models = require('./Model/Models');
+var Enums = require('./Enums/Enums');
 var props = t.struct({
     collectionViewDatasource: CollectionViewDatasource.Protocol,
     frame: Models.Rect,
     collectionViewDelegate: CollectionViewDelegate.Protocol,
-    collectionViewLayout: CollectionViewLayout.Protocol
+    collectionViewLayout: CollectionViewLayout.Protocol,
+    scrollViewDelegate: t.maybe(ScrollViewDelegate.Protocol)
 }, 'CollectionViewProps');
 
 var scrollInterval = 150;
@@ -21639,7 +21645,8 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
             scrollTimeout: undefined,
             isScrolling: false,
             currentLoadedRect: Models.Geometry.getRectZero(),
-            defaultBlockSize: Models.Geometry.getSizeZero()
+            defaultBlockSize: Models.Geometry.getSizeZero(),
+            frame: Models.Geometry.getRectZero()
         };
     },
     componentDidMount: function() {
@@ -21652,6 +21659,9 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
         }
         if (this.props.collectionViewLayout) {
             console.log('isTypeSafe<-->CollectionViewLayout: ' + CollectionViewLayout.Protocol.is(this.props.collectionViewLayout));
+        }
+        if (this.props.scrollViewDelegate) {
+            console.log('isTypeSafe<-->ScrollViewDelegate: ' + ScrollViewDelegate.Protocol.is(this.props.scrollViewDelegate));
         }
 
         this.props.collectionViewLayout.prepareLayout.call(this, null);
@@ -21684,10 +21694,12 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
 
 
         var shouldUpdate = false;
-        if(!currentLoadedRect || !currentLoadedRect.size) {
+        if(nextProps && nextProps.invalidateLayout) {
             shouldUpdate = true;
-        }
-        else if(!isScrollUp && newScrollTop > currentLoadedRect.origin.y + currentLoadedRect.size.height - frame.size.height*3 - threshold ) {
+            nextProps.collectionViewLayout.prepareLayout.call(this, null);
+        } else if(!currentLoadedRect || !currentLoadedRect.size) {
+            shouldUpdate = true;
+        } else if(!isScrollUp && newScrollTop > currentLoadedRect.origin.y + currentLoadedRect.size.height - frame.size.height*3 - threshold ) {
             shouldUpdate = true;
         } else if(isScrollUp && newScrollTop < currentLoadedRect.origin.y + frame.size.height + threshold) {
             shouldUpdate = true;
@@ -21779,7 +21791,18 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
         return rect;
     },
     onScroll: function(e) {
-        this.handleScroll(e.target.scrollTop);
+        var scrollBottom = this.props.frame.size.height;
+
+        var scrollTop = e.target.scrollTop;
+        if(this.props.scrollViewDelegate != null && this.props.scrollViewDelegate.scrollViewDidScroll != null) {
+            var previousScrollTop = this.state.scrollTop;
+            var scrollDirection = "ScrollDirectionTypeVeriticalUp";
+            if(previousScrollTop < scrollTop) {
+                scrollDirection = "ScrollDirectionTypeVeriticalDown";
+            }
+            this.props.scrollViewDelegate.scrollViewDidScroll(scrollDirection, scrollTop, scrollBottom);
+        }
+        this.handleScroll(scrollTop);
     },
     handleScroll: function(scrollTop) {
         var that = this;
@@ -21817,7 +21840,7 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
 });
 
 module.exports.View = CollectionView;
-},{"./CollectionViewDelegate":316,"./Datasource/CollectionViewDatasource":317,"./Layout/CollectionViewLayout":322,"./Layout/CollectionViewLayoutAttributes":323,"./Model/Models":328,"react/addons":3,"tcomb":313,"tcomb-react":165}],316:[function(require,module,exports){
+},{"./CollectionViewDelegate":316,"./Datasource/CollectionViewDatasource":317,"./Enums/Enums":319,"./Layout/CollectionViewLayout":322,"./Layout/CollectionViewLayoutAttributes":323,"./Model/Models":328,"./ScrollView/ScrollViewDelegate":332,"react/addons":3,"tcomb":313,"tcomb-react":165}],316:[function(require,module,exports){
 var t = require('tcomb');
 
 var Models = require('./Model/Models');
@@ -21872,7 +21895,7 @@ module.exports = Enums;
 
 },{"./CollectionElementType":318,"./ScrollDirectionType":320}],320:[function(require,module,exports){
 var t = require('tcomb');
-var ScrollDirectionType = t.enums.of('ScrollDirectionTypeNone ScrollDirectionTypeHorizontal ScrollDirectionTypeVeritical', 'ScrollDirectionType');
+var ScrollDirectionType = t.enums.of('ScrollDirectionTypeNone ScrollDirectionTypeHorizontal ScrollDirectionTypeHorizontalLeft ScrollDirectionTypeHorizontalRight ScrollDirectionTypeVeritical ScrollDirectionTypeVeriticalUp ScrollDirectionTypeVeriticalDown', 'ScrollDirectionType');
 
 module.exports = ScrollDirectionType;
 
@@ -21925,7 +21948,7 @@ function CollectionViewFlowLayoutFactory(width, layoutDelegate, itemSize, insets
         _availableSpacing = Math.floor(_width/_numberOfColumns);
         _horizontalMargin = Math.floor(_availableSpacing/(_numberOfColumns*2));
         var ratio = (_horizontalMargin)/(_requestedInsets.left + _requestedInsets.right);
-        console.log("requested to actual insets ratio: " + ratio);
+        //console.log("requested to actual insets ratio: " + ratio);
         _actualInsets = new Models.EdgeInsets({top: _requestedInsets.top, bottom: _requestedInsets.bottom, left: Math.floor(_requestedInsets.left*ratio), right: Math.floor(_requestedInsets.right*ratio)});
         _itemTotalWidth = _itemSize.width + _actualInsets.left + _actualInsets.right;
         _rowHeight = _itemSize.height + _requestedInsets.top + _requestedInsets.bottom;
@@ -22238,5 +22261,19 @@ var Size = t.struct({
 
 module.exports = Size;
 
-},{"tcomb":313}]},{},[1])(1)
+},{"tcomb":313}],332:[function(require,module,exports){
+var t = require('tcomb');
+
+var Models = require('../Model/Models');
+var Enums = require('../Enums/Enums');
+
+var ScrollViewDelegate = t.struct({
+    "scrollViewDidScroll": t.maybe(t.func([Enums.ScrollDirectionType, t.Num, t.Num], t.Nil)), //Direction, ScrollPosition (scrollTop), BottomOfView (ScrollTOp = BottomView means scrolled to bottom)
+    "scrollViewWilLBeginDragging": t.maybe(t.func(t.Nil, t.Nil)),
+    "scrollViewDidScrollToTop": t.maybe(t.func(t.Nil, t.Nil))
+}, 'ScrollViewDelegate');
+
+module.exports.Protocol = ScrollViewDelegate;
+
+},{"../Enums/Enums":319,"../Model/Models":328,"tcomb":313}]},{},[1])(1)
 });

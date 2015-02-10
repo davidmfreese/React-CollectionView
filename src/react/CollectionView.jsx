@@ -7,13 +7,16 @@ var CollectionViewDatasource = require('./Datasource/CollectionViewDatasource');
 var CollectionViewDelegate = require('./CollectionViewDelegate');
 var CollectionViewLayout = require('./Layout/CollectionViewLayout');
 var CollectionViewLayoutAttributes = require('./Layout/CollectionViewLayoutAttributes');
-var Models = require('./Model/Models');
+var ScrollViewDelegate = require('./ScrollView/ScrollViewDelegate');
 
+var Models = require('./Model/Models');
+var Enums = require('./Enums/Enums');
 var props = t.struct({
     collectionViewDatasource: CollectionViewDatasource.Protocol,
     frame: Models.Rect,
     collectionViewDelegate: CollectionViewDelegate.Protocol,
-    collectionViewLayout: CollectionViewLayout.Protocol
+    collectionViewLayout: CollectionViewLayout.Protocol,
+    scrollViewDelegate: t.maybe(ScrollViewDelegate.Protocol)
 }, 'CollectionViewProps');
 
 var scrollInterval = 150;
@@ -28,7 +31,8 @@ var CollectionView = React.createClass({
             scrollTimeout: undefined,
             isScrolling: false,
             currentLoadedRect: Models.Geometry.getRectZero(),
-            defaultBlockSize: Models.Geometry.getSizeZero()
+            defaultBlockSize: Models.Geometry.getSizeZero(),
+            frame: Models.Geometry.getRectZero()
         };
     },
     componentDidMount: function() {
@@ -41,6 +45,9 @@ var CollectionView = React.createClass({
         }
         if (this.props.collectionViewLayout) {
             console.log('isTypeSafe<-->CollectionViewLayout: ' + CollectionViewLayout.Protocol.is(this.props.collectionViewLayout));
+        }
+        if (this.props.scrollViewDelegate) {
+            console.log('isTypeSafe<-->ScrollViewDelegate: ' + ScrollViewDelegate.Protocol.is(this.props.scrollViewDelegate));
         }
 
         this.props.collectionViewLayout.prepareLayout.call(this, null);
@@ -73,10 +80,12 @@ var CollectionView = React.createClass({
 
 
         var shouldUpdate = false;
-        if(!currentLoadedRect || !currentLoadedRect.size) {
+        if(nextProps && nextProps.invalidateLayout) {
             shouldUpdate = true;
-        }
-        else if(!isScrollUp && newScrollTop > currentLoadedRect.origin.y + currentLoadedRect.size.height - frame.size.height*3 - threshold ) {
+            nextProps.collectionViewLayout.prepareLayout.call(this, null);
+        } else if(!currentLoadedRect || !currentLoadedRect.size) {
+            shouldUpdate = true;
+        } else if(!isScrollUp && newScrollTop > currentLoadedRect.origin.y + currentLoadedRect.size.height - frame.size.height*3 - threshold ) {
             shouldUpdate = true;
         } else if(isScrollUp && newScrollTop < currentLoadedRect.origin.y + frame.size.height + threshold) {
             shouldUpdate = true;
@@ -168,7 +177,18 @@ var CollectionView = React.createClass({
         return rect;
     },
     onScroll: function(e) {
-        this.handleScroll(e.target.scrollTop);
+        var scrollBottom = this.props.frame.size.height;
+
+        var scrollTop = e.target.scrollTop;
+        if(this.props.scrollViewDelegate != null && this.props.scrollViewDelegate.scrollViewDidScroll != null) {
+            var previousScrollTop = this.state.scrollTop;
+            var scrollDirection = "ScrollDirectionTypeVeriticalUp";
+            if(previousScrollTop < scrollTop) {
+                scrollDirection = "ScrollDirectionTypeVeriticalDown";
+            }
+            this.props.scrollViewDelegate.scrollViewDidScroll(scrollDirection, scrollTop, scrollBottom);
+        }
+        this.handleScroll(scrollTop);
     },
     handleScroll: function(scrollTop) {
         var that = this;

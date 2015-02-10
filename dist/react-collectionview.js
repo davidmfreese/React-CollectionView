@@ -9,6 +9,10 @@ var CollectionViewDatasource = require('./src/react/Datasource/CollectionViewDat
 var CollectionViewLayout = require('./src/react/Layout/CollectionViewLayout');
 var CollectionViewLayoutDelegate = require('./src/react/Layout/CollectionViewLayoutDelegate');
 var CollectionViewLayoutAttributes = require('./src/react/Layout/CollectionViewLayoutAttributes');
+var ScrollViewDelegate = require('./src/react/ScrollView/ScrollViewDelegate');
+
+//impl
+var CollectionViewFlowLayout = require('./src/react/Layout/CollectionViewFlowLayout');
 
 var exports = {
     CollectionView: CollectionView,
@@ -18,14 +22,19 @@ var exports = {
     CollectionViewLayout: CollectionViewLayout,
     CollectionViewLayoutDelegate: CollectionViewLayoutDelegate,
     CollectionViewLayoutAttributes: CollectionViewLayoutAttributes,
+    ScrollViewDelegate: ScrollViewDelegate,
+
     Models: Models,
-    Enums: require('./src/react/Enums/Enums')
+    Enums: require('./src/react/Enums/Enums'),
+    React: require('react/addons'),
+
+    CollectionViewFlowLayout: CollectionViewFlowLayout
 };
 
 module.exports = exports;
 
 
-},{"./src/react/Cell/CollectionViewCell.jsx":314,"./src/react/CollectionView.jsx":315,"./src/react/CollectionViewDelegate":316,"./src/react/Datasource/CollectionViewDatasource":317,"./src/react/Enums/Enums":319,"./src/react/Layout/CollectionViewLayout":321,"./src/react/Layout/CollectionViewLayoutAttributes":322,"./src/react/Layout/CollectionViewLayoutDelegate":323,"./src/react/Model/Models":327}],2:[function(require,module,exports){
+},{"./src/react/Cell/CollectionViewCell.jsx":314,"./src/react/CollectionView.jsx":315,"./src/react/CollectionViewDelegate":316,"./src/react/Datasource/CollectionViewDatasource":317,"./src/react/Enums/Enums":319,"./src/react/Layout/CollectionViewFlowLayout":321,"./src/react/Layout/CollectionViewLayout":322,"./src/react/Layout/CollectionViewLayoutAttributes":323,"./src/react/Layout/CollectionViewLayoutDelegate":324,"./src/react/Model/Models":328,"./src/react/ScrollView/ScrollViewDelegate":332,"react/addons":3}],2:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -21598,12 +21607,11 @@ var CollectionViewCellProtocol = t.struct({
 
 module.exports.Protocol = CollectionViewCellProtocol;
 
-
 //NOT IMPLEMENTED
 //  willTransitionFromLayout:toLayout:
 //  didTransitionFromLayout:toLayout:
 
-},{"../Layout/CollectionViewLayoutAttributes":322,"../Model/IndexPath":326,"react":164,"tcomb":313,"tcomb-react":165}],315:[function(require,module,exports){
+},{"../Layout/CollectionViewLayoutAttributes":323,"../Model/IndexPath":327,"react":164,"tcomb":313,"tcomb-react":165}],315:[function(require,module,exports){
 /** @jsx React.DOM */
 var React = require('react/addons');
 var t = require('tcomb');
@@ -21613,124 +21621,226 @@ var CollectionViewDatasource = require('./Datasource/CollectionViewDatasource');
 var CollectionViewDelegate = require('./CollectionViewDelegate');
 var CollectionViewLayout = require('./Layout/CollectionViewLayout');
 var CollectionViewLayoutAttributes = require('./Layout/CollectionViewLayoutAttributes');
+var ScrollViewDelegate = require('./ScrollView/ScrollViewDelegate');
+
 var Models = require('./Model/Models');
-
-var CollectionViewProtocol = t.struct({
-
-}, 'CollectionViewProtocol');
-
-//TODO: frame shouldn't be optional
+var Enums = require('./Enums/Enums');
 var props = t.struct({
     collectionViewDatasource: CollectionViewDatasource.Protocol,
-    frame: t.maybe(Models.Rect),
-    collectionViewDelegate: t.maybe(CollectionViewDelegate.Protocol),
-    collectionViewLayout: t.maybe(CollectionViewLayout.Protocol)
+    frame: Models.Rect,
+    collectionViewDelegate: CollectionViewDelegate.Protocol,
+    collectionViewLayout: CollectionViewLayout.Protocol,
+    scrollViewDelegate: t.maybe(ScrollViewDelegate.Protocol)
 }, 'CollectionViewProps');
+
+var scrollInterval = 150;
+var debugScroll = false;
 
 var CollectionView = React.createClass({displayName: 'CollectionView',
     propTypes: tReact.react.toPropTypes(props),
+    getInitialState: function() {
+        return {
+            scrollTop: 0,
+            collectionViewContentSize: Models.Geometry.getSizeZero(),
+            scrollTimeout: undefined,
+            isScrolling: false,
+            currentLoadedRect: Models.Geometry.getRectZero(),
+            defaultBlockSize: Models.Geometry.getSizeZero(),
+            frame: Models.Geometry.getRectZero()
+        };
+    },
     componentDidMount: function() {
         console.log('isTypeSafe<-->CollectionViewDatasource: ' + CollectionViewDatasource.Protocol.is(this.props.collectionViewDatasource));
-        if(this.props.frame) {
+        if (this.props.frame) {
             console.log('isTypeSafe<-->Frame: ' + Models.Rect.is(this.props.frame));
         }
-        if(this.props.collectionViewDelegate) {
+        if (this.props.collectionViewDelegate) {
             console.log('isTypeSafe<-->CollectionViewDelegate: ' + CollectionViewDelegate.Protocol.is(this.props.collectionViewDelegate));
         }
-        if(this.props.collectionViewLayout) {
+        if (this.props.collectionViewLayout) {
             console.log('isTypeSafe<-->CollectionViewLayout: ' + CollectionViewLayout.Protocol.is(this.props.collectionViewLayout));
         }
+        if (this.props.scrollViewDelegate) {
+            console.log('isTypeSafe<-->ScrollViewDelegate: ' + ScrollViewDelegate.Protocol.is(this.props.scrollViewDelegate));
+        }
+
+        this.props.collectionViewLayout.prepareLayout.call(this, null);
+        var contentSize = this.props.collectionViewLayout.getCollectionViewContentSize.call(this, null);
+        if (contentSize && contentSize.height && contentSize.width) {
+
+        } else {
+            contentSize = Models.Geometry.getSizeZero();
+        }
+
+        var defaultBlockSize = this.props.frame.size;
+        var currentLoadedRect = this.getRectForScrollTop(0, defaultBlockSize);
+
+        this.setState({collectionViewContentSize: contentSize, currentLoadedRect: currentLoadedRect, defaultBlockSize: defaultBlockSize});
+
+    },
+    shouldComponentUpdate: function(nextProps, nextState) {
+        //TODO: this should reload `blocks`...
+        //TODO: I think we need to check Props here too not just state
+
+        var newScrollTop = nextState.scrollTop;
+
+        var currentScrollTop = this.state.scrollTop;
+        var currentLoadedRect = this.state.currentLoadedRect;
+
+        var isScrollUp = newScrollTop < currentScrollTop;
+
+        var frame = this.props.frame;
+        var threshold = Math.max(frame.size.height/2);
+
+
+        var shouldUpdate = false;
+        if(nextProps && nextProps.invalidateLayout) {
+            shouldUpdate = true;
+            nextProps.collectionViewLayout.prepareLayout.call(this, null);
+        } else if(!currentLoadedRect || !currentLoadedRect.size) {
+            shouldUpdate = true;
+        } else if(!isScrollUp && newScrollTop > currentLoadedRect.origin.y + currentLoadedRect.size.height - frame.size.height*3 - threshold ) {
+            shouldUpdate = true;
+        } else if(isScrollUp && newScrollTop < currentLoadedRect.origin.y + frame.size.height + threshold) {
+            shouldUpdate = true;
+        }
+
+        if(debugScroll) {
+            console.log('new scrollTop: ' + newScrollTop + ", old scrollTop: " + currentScrollTop);
+            console.log('will update: ' + shouldUpdate);
+        }
+        return shouldUpdate;
     },
     render: function() {
-        var numberItemsInSection = this.props.collectionViewDatasource.numberItemsInSection(0);
-        var rows = [];
-        for(var i = 0; i < numberItemsInSection; i++) {
-            rows.push(React.DOM.span(null, "item number: ", i + 1));
+        var frame = this.props.frame;
+        var rect = this.state.currentLoadedRect;
+
+        //TODO:  Should this be moved out of the render function??  check perf
+        var children = [];
+        var layoutAttributes = this.props.collectionViewLayout.layoutAttributesForElementsInRect(rect);
+        for(var i = 0; i < layoutAttributes.length; i++) {
+            var attributes = layoutAttributes[i];
+            var style = {
+                position: "absolute",
+                top: attributes.frame.origin.y,
+                left: attributes.frame.origin.x,
+                height:attributes.frame.size.height,
+                width: attributes.frame.size.width
+            };
+
+            var Cell = this.props.collectionViewDatasource.cellForItemAtIndexPath(attributes.indexPath).getContentView();
+            children.push(React.DOM.div({style: style}, Cell(null)));
+        }
+
+        if(children.length == 0) {
+            children.push(React.DOM.div(null));
+        }
+
+        var scrollableStyle = {
+            height: frame.size.height,
+            width: frame.size.width,
+            overflowX: 'hidden',
+            overflowY: 'scroll',
+            position: 'absolute'
+        }
+
+        var clearStyle = {
+            clear:"both"
+        }
+
+        var contentSize = this.state.collectionViewContentSize;
+        if(!contentSize) {
+            contentSize = new Models.Size({height:0, width:0});
+        }
+        var wrapperStyle = {
+            width:frame.size.width,
+            height:contentSize.height
         }
 
         return (
-            React.DOM.div(null, 
-                rows
+        React.DOM.div({className: this.props.className ? this.props.className + '-container' : 'scroll-container', 
+            ref: "scrollable", 
+            style: scrollableStyle, 
+            onScroll: this.onScroll}, 
+            React.DOM.div({ref: "smoothScrollingWrapper", onScroll: this.onScroll, style: wrapperStyle}, 
+                children
             )
         )
+        )
+    },
+    getRectForScrollTop: function(scrollTop, overrideDefaultBlockSize) {
+        var defaultBlockSize = overrideDefaultBlockSize;
+        if(!defaultBlockSize) {
+            defaultBlockSize = this.state.defaultBlockSize;
+        }
+
+        var currentY = scrollTop - defaultBlockSize.height;
+        var currentX = 0;
+        var currentBottom = currentY + defaultBlockSize.height*3;
+
+        if(currentY < 0) {
+            currentY = 0;
+        }
+        var height = Math.max(currentBottom - currentY, 0);
+
+        var rect = new Models.Rect({
+            origin: new Models.Point({x: currentX, y: currentY}),
+            size: new Models.Size({width: defaultBlockSize.width, height: height})
+        });
+
+        return rect;
+    },
+    onScroll: function(e) {
+        var scrollBottom = this.props.frame.size.height;
+
+        var scrollTop = e.target.scrollTop;
+        if(this.props.scrollViewDelegate != null && this.props.scrollViewDelegate.scrollViewDidScroll != null) {
+            var previousScrollTop = this.state.scrollTop;
+            var scrollDirection = "ScrollDirectionTypeVeriticalUp";
+            if(previousScrollTop < scrollTop) {
+                scrollDirection = "ScrollDirectionTypeVeriticalDown";
+            }
+            this.props.scrollViewDelegate.scrollViewDidScroll(scrollDirection, scrollTop, scrollBottom);
+        }
+        this.handleScroll(scrollTop);
+    },
+    handleScroll: function(scrollTop) {
+        var that = this;
+        this.manageScrollTimeouts();
+        this.setStateFromScrollTop(scrollTop);
+    },
+    nearBottom: function(scrollTop) {
+        //This will be implemented to check if near bottom (and signal load more if necessary)
+    },
+    manageScrollTimeouts: function() {
+        if (this.state.scrollTimeout) {
+            clearTimeout(this.state.scrollTimeout);
+        }
+
+        var that = this,
+            scrollTimeout = setTimeout(function() {
+                that.setState({
+                    isScrolling: false,
+                    scrollTimeout: undefined
+                })
+            }, scrollInterval);
+
+        this.setState({
+            isScrolling: true,
+            scrollTimeout: scrollTimeout
+        });
+    },
+    setStateFromScrollTop: function(scrollTop) {
+        var currentLoadedRect = this.getRectForScrollTop(scrollTop);
+        this.setState({
+            scrollTop: scrollTop,
+            currentLoadedRect: currentLoadedRect
+        });
     }
 });
 
 module.exports.View = CollectionView;
-module.exports.Protocol = CollectionViewProtocol;
-
-//UICollectionView
-/*
-Initializing a Collection View
-initWithFrame:collectionViewLayout:
-
-Configuring the Collection View
-delegat - Property
-dataSource - Property
-backgroundView -Property
-
-Creating Collection View Cells
-registerClass:forCellWithReuseIdentifier:
-    registerNib:forCellWithReuseIdentifier:
-        registerClass:forSupplementaryViewOfKind:withReuseIdentifier:
-            registerNib:forSupplementaryViewOfKind:withReuseIdentifier:
-                dequeueReusableCellWithReuseIdentifier:forIndexPath:
-                    dequeueReusableSupplementaryViewOfKind:withReuseIdentifier:forIndexPath:
-
-Changing the Layout
-collectionViewLayout - Property
-setCollectionViewLayout:animated:
-    setCollectionViewLayout:animated:completion:
-        startInteractiveTransitionToCollectionViewLayout:completion:
-            finishInteractiveTransition
-cancelInteractiveTransition
-
-
-reloadData
-reloadSections:
-    reloadItemsAtIndexPaths:
-        Getting the State of the Collection View
-numberOfSections
-numberOfItemsInSection:
-    visibleCells
-Inserting, Moving, and Deleting Items
-insertItemsAtIndexPaths:
-    moveItemAtIndexPath:toIndexPath:
-        deleteItemsAtIndexPaths:
-
-Inserting, Moving, and Deleting Sections
-insertSections:
-    moveSection:toSection:
-        deleteSections:
-            Managing the Selection
-allowsSelection - Property
-allowsMultipleSelection - Property
-indexPathsForSelectedItems
-selectItemAtIndexPath:animated:scrollPosition:
-    deselectItemAtIndexPath:animated:
-        Locating Items in the Collection View
-indexPathForItemAtPoint:
-    indexPathsForVisibleItems
-indexPathForCell:
-    cellForItemAtIndexPath:
-        Getting Layout Information
-layoutAttributesForItemAtIndexPath:
-    layoutAttributesForSupplementaryElementOfKind:atIndexPath:
-        Scrolling an Item Into View
-scrollToItemAtIndexPath:atScrollPosition:animated:
-    Animating Multiple Changes to the Collection View
-performBatchUpdates:completion:
-    Data Types
-UICollectionViewLayoutInteractiveTransitionCompletion
-Constants
-UICollectionViewScrollPosition
-
- */
-
-//UICollectionViewDelegate
-//UICollectionViewLayout
-
-},{"./CollectionViewDelegate":316,"./Datasource/CollectionViewDatasource":317,"./Layout/CollectionViewLayout":321,"./Layout/CollectionViewLayoutAttributes":322,"./Model/Models":327,"react/addons":3,"tcomb":313,"tcomb-react":165}],316:[function(require,module,exports){
+},{"./CollectionViewDelegate":316,"./Datasource/CollectionViewDatasource":317,"./Enums/Enums":319,"./Layout/CollectionViewLayout":322,"./Layout/CollectionViewLayoutAttributes":323,"./Model/Models":328,"./ScrollView/ScrollViewDelegate":332,"react/addons":3,"tcomb":313,"tcomb-react":165}],316:[function(require,module,exports){
 var t = require('tcomb');
 
 var Models = require('./Model/Models');
@@ -21739,7 +21849,6 @@ var CollectionViewDelegateProtocol = t.struct({
     "shouldSelectItemAtIndexPath": t.maybe(t.func(Models.IndexPath, t.Bool)),
     "didSelectItemAtIndexPath": t.maybe(t.func(Models.IndexPath, t.Nil)),
     "shouldDeselectItemAtIndexPath": t.maybe(t.func(Models.IndexPath, t.Bool)),
-    "shouldSelectItemAtIndexPath": t.maybe(t.func(Models.IndexPath, t.Bool)),
 
     "shouldHighlightItemAtIndexPath": t.maybe(t.func(Models.IndexPath, t.Bool)),
     "didHighlightItemAtIndexPath": t.maybe(t.func(Models.IndexPath, t.Nil)),
@@ -21749,7 +21858,7 @@ var CollectionViewDelegateProtocol = t.struct({
 }, 'CollectionViewDelegateProtocol');
 
 module.exports.Protocol = CollectionViewDelegateProtocol;
-},{"./Model/Models":327,"tcomb":313}],317:[function(require,module,exports){
+},{"./Model/Models":328,"tcomb":313}],317:[function(require,module,exports){
 var t = require('tcomb');
 
 var IndexPath = require('../Model/IndexPath');
@@ -21764,7 +21873,7 @@ var CollectionViewDatasourceProtocol = t.struct({
 
 module.exports.Protocol = CollectionViewDatasourceProtocol;
 
-},{"../Cell/CollectionViewCell.jsx":314,"../Model/IndexPath":326,"tcomb":313}],318:[function(require,module,exports){
+},{"../Cell/CollectionViewCell.jsx":314,"../Model/IndexPath":327,"tcomb":313}],318:[function(require,module,exports){
 var t = require('tcomb');
 var CollectionElementType = t.enums.of('CollectionElementTypeCell CollectionElementTypeSupplementaryView CollectionElementTypeDecorationView', 'CollectionElementType');
 
@@ -21786,7 +21895,7 @@ module.exports = Enums;
 
 },{"./CollectionElementType":318,"./ScrollDirectionType":320}],320:[function(require,module,exports){
 var t = require('tcomb');
-var ScrollDirectionType = t.enums.of('ScrollDirectionTypeNone ScrollDirectionTypeHorizontal ScrollDirectionTypeVeritical', 'ScrollDirectionType');
+var ScrollDirectionType = t.enums.of('ScrollDirectionTypeNone ScrollDirectionTypeHorizontal ScrollDirectionTypeHorizontalLeft ScrollDirectionTypeHorizontalRight ScrollDirectionTypeVeritical ScrollDirectionTypeVeriticalUp ScrollDirectionTypeVeriticalDown', 'ScrollDirectionType');
 
 module.exports = ScrollDirectionType;
 
@@ -21794,15 +21903,181 @@ module.exports = ScrollDirectionType;
 var t = require('tcomb');
 
 var Models = require('../Model/Models');
+var CollectionViewDatasource = require('./CollectionViewLayout');
+var CollectionViewLayout = require('./CollectionViewLayout');
 var CollectionViewLayoutDelegate = require('./CollectionViewLayoutDelegate');
 var CollectionViewLayoutAttributes = require('./CollectionViewLayoutAttributes');
+
+function CollectionViewFlowLayoutFactory(width, layoutDelegate, itemSize, insets) {
+    CollectionViewLayoutDelegate.Protocol.is(layoutDelegate);
+
+    var _width = width;
+
+    var _itemSize = Models.Geometry.getSizeZero();
+    if(itemSize) {
+        Models.Size.is(itemSize);
+        _itemSize = itemSize;
+    }
+
+    var _requestedInsets = Models.Geometry.getInsetsZero();
+    var _actualInsets = _requestedInsets;
+    if(insets) {
+        Models.EdgeInsets.is(insets);
+        _requestedInsets = insets;
+        _actualInsets = _requestedInsets;
+    }
+
+    var _numberRows;
+    var _itemTotalWidth;
+    var _numberOfColumns;
+    var _columnSpacing;
+    var _availableSpacing;
+    var _rowHeight
+    var _numberOfTotalRows;
+    var _contentSize;
+    var _horizontalMargin;
+
+    var prepareLayout = function() {
+        if(!_requestedInsets) {
+            _requestedInsets = Models.Geometry.getInsetsZero();
+        }
+
+        var numberItems = layoutDelegate.numberItemsInSection(0);
+        var requestedItemWidth = _itemSize.width + _requestedInsets.left + _requestedInsets.right;
+        _numberOfColumns = Math.floor(_width/requestedItemWidth);
+        _availableSpacing = Math.floor(_width/_numberOfColumns);
+        _horizontalMargin = Math.floor(_availableSpacing/(_numberOfColumns*2));
+        var ratio = (_horizontalMargin)/(_requestedInsets.left + _requestedInsets.right);
+        //console.log("requested to actual insets ratio: " + ratio);
+        _actualInsets = new Models.EdgeInsets({top: _requestedInsets.top, bottom: _requestedInsets.bottom, left: Math.floor(_requestedInsets.left*ratio), right: Math.floor(_requestedInsets.right*ratio)});
+        _itemTotalWidth = _itemSize.width + _actualInsets.left + _actualInsets.right;
+        _rowHeight = _itemSize.height + _requestedInsets.top + _requestedInsets.bottom;
+        _numberOfTotalRows = Math.ceil(numberItems/_numberOfColumns);
+    }
+
+    var setContentSize = function() {
+        if(Models.Geometry.isSizeZero(_itemSize)) {
+            console.log('no item size set');
+        }
+
+        if(!_numberRows) {
+            prepareLayout();
+        }
+
+       _contentSize = Models.Size({height:_numberOfTotalRows*_rowHeight, width: _itemTotalWidth});
+    }
+
+    //setContentSize();
+
+    var CollectionViewFlowLayout = new CollectionViewLayout.Protocol({
+        "layoutDelegate": layoutDelegate,
+        "getCollectionViewContentSize": function() {
+            if(_numberOfTotalRows) {
+                _contentSize = Models.Size({height: _numberOfTotalRows * _rowHeight, width: _itemTotalWidth});
+            }
+            else {
+                _contentSize = Models.Geometry.getSizeZero();
+            }
+            return _contentSize;
+        },
+        "prepareLayout": function() {
+            prepareLayout();
+            //setContentSize();
+        },
+        "layoutAttributesForElementsInRect": function(rect) {
+            var layoutAttributesInRect = [];
+            var numberItems = this.layoutDelegate.numberItemsInSection(0);
+
+            var topRow = Math.floor(rect.origin.y/_rowHeight);
+            var bottomRow = Math.ceil((rect.origin.y + rect.size.height)/_rowHeight);
+
+            if(bottomRow > _numberOfTotalRows) {
+                bottomRow = _numberOfTotalRows;
+            }
+
+            var firstIndex = Math.max(topRow - 1, 0)*_numberOfColumns;
+            var lastIndex = Math.min(numberItems - 1, bottomRow*_numberOfColumns - 1);
+
+            for(var i = firstIndex; i <= lastIndex; i++) {
+                var indexPath = new Models.IndexPath({row: i, section: 0});
+                var layoutAttributes = this.layoutAttributesForItemAtIndexPath(indexPath);
+
+                layoutAttributesInRect.push(layoutAttributes)
+            }
+
+            return new CollectionViewLayout.Model.ArrayOfLayoutAttributes(layoutAttributesInRect);
+        },
+        "layoutAttributesForItemAtIndexPath": function(indexPath) {
+            Models.IndexPath.is(indexPath);
+
+            var row = Math.floor(indexPath.row/_numberOfColumns);
+            var y = row*_rowHeight + _actualInsets.top;
+            var column = indexPath.row % _numberOfColumns;
+            var x = column*_itemTotalWidth  +  _actualInsets.left - Math.floor(_actualInsets.left/2);
+            var origin = new Models.Point({x: x, y: y});
+            var size = new Models.Size({height: _itemSize.height, width: _itemSize.width});
+            var frame = new Models.Rect({origin: origin, size: size});
+
+            var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
+                "indexPath": indexPath,
+                "representedElementCategory": function(){
+                    return "CollectionElementTypeCell";
+                },
+                "representedElementKind": function(){
+                    return "default"
+                },
+                "frame": frame,
+                "size": size,
+                "hidden": false
+            });
+
+            return layoutAttributes;
+        },
+        "prepareForCollectionViewUpdates": function() {
+
+        },
+        "invalidateLayout": function() {
+
+
+        }, "setItemSize": function(size) {
+            _itemSize = size;
+            this.invalidateLayout();
+        },
+        "getItemSize": function() {
+            return _itemSize;
+        },
+        "setInsets": function(insets) {
+            _requestedInsets = insets;
+            this.invalidateLayout();
+        },
+        "getInsets": function() {
+            return _insets;
+        },
+        "setWidth": function(newWidth) {
+            _width = newWidth;
+            this.invalidateLayout();
+        }
+    });
+
+    return CollectionViewFlowLayout;
+}
+
+module.exports = CollectionViewFlowLayoutFactory;
+
+},{"../Model/Models":328,"./CollectionViewLayout":322,"./CollectionViewLayoutAttributes":323,"./CollectionViewLayoutDelegate":324,"tcomb":313}],322:[function(require,module,exports){
+var t = require('tcomb');
+
+var Models = require('../Model/Models');
+var CollectionViewLayoutDelegate = require('./CollectionViewLayoutDelegate');
+var CollectionViewLayoutAttributes = require('./CollectionViewLayoutAttributes');
+var CollectionViewDatasource = require('../Datasource/CollectionViewDatasource');
 
 var LayoutModel = {};
 
 LayoutModel.ArrayOfLayoutAttributes = t.list(CollectionViewLayoutAttributes.Protocol, "ArrayOfLayoutAttributes")
 
 var CollectionViewLayoutProtocol = t.struct({
-    "delegate": CollectionViewLayoutDelegate.Protocol,
+    "layoutDelegate": CollectionViewLayoutDelegate.Protocol,
     "getCollectionViewContentSize": t.func(t.Nil, Models.Size),
     "prepareLayout": t.func(t.Nil, t.Nil),
     "layoutAttributesForElementsInRect":t.func(Models.Rect, LayoutModel.ArrayOfLayoutAttributes),
@@ -21814,7 +22089,7 @@ var CollectionViewLayoutProtocol = t.struct({
 module.exports.Protocol = CollectionViewLayoutProtocol;
 module.exports.Model = LayoutModel;
 
-},{"../Model/Models":327,"./CollectionViewLayoutAttributes":322,"./CollectionViewLayoutDelegate":323,"tcomb":313}],322:[function(require,module,exports){
+},{"../Datasource/CollectionViewDatasource":317,"../Model/Models":328,"./CollectionViewLayoutAttributes":323,"./CollectionViewLayoutDelegate":324,"tcomb":313}],323:[function(require,module,exports){
 var t = require('tcomb');
 var tReact = require('tcomb-react');
 
@@ -21849,12 +22124,15 @@ module.exports.Protocol = CollectionViewLayoutAttributesProtocol;
 //
 //Constants
 //    CollectionElementType
-},{"../Enums/CollectionElementType":318,"../Model/Models":327,"tcomb":313,"tcomb-react":165}],323:[function(require,module,exports){
+},{"../Enums/CollectionElementType":318,"../Model/Models":328,"tcomb":313,"tcomb-react":165}],324:[function(require,module,exports){
 var t = require('tcomb');
 
 var Models = require('../Model/Models');
+var CollectionViewDatasource = require('../Datasource/CollectionViewDatasource');
 
 var CollectionViewLayoutDelegate = t.struct({
+    "numberItemsInSection": t.func(t.Num, t.Num),
+    "numberOfSectionsInCollectionView": t.maybe(t.func(t.Nil, t.Num)),
     "sizeForItemAtIndexPath": t.maybe(t.func(Models.IndexPath, Models.Size)),
     "insetForSectionAtIndex": t.maybe(t.func(Models.IndexPath, Models.EdgeInsets)),
     "minimumLineSpacingForSectionAtIndex": t.maybe(t.func(Models.IndexPath, t.Num)),
@@ -21873,7 +22151,7 @@ module.exports.Protocol = CollectionViewLayoutDelegate;
 //collectionView:layout:referenceSizeForHeaderInSection:
 //    collectionView:layout:referenceSizeForFooterInSection:
 
-},{"../Model/Models":327,"tcomb":313}],324:[function(require,module,exports){
+},{"../Datasource/CollectionViewDatasource":317,"../Model/Models":328,"tcomb":313}],325:[function(require,module,exports){
 var t = require('tcomb');
 
 var EdgeInsets = t.struct({
@@ -21886,15 +22164,44 @@ var EdgeInsets = t.struct({
 module.exports = EdgeInsets;
 
 
-},{"tcomb":313}],325:[function(require,module,exports){
+},{"tcomb":313}],326:[function(require,module,exports){
+var Point = require('./Point');
+var Size = require('./Size');
+var Rect = require('./Rect');
+var EdgeInsets = require('./EdgeInsets');
+
 var Geometry = {};
 
+var pointZero = new Point({x: 0, y: 0});
+var sizeZero = new Size({height:0, width:0});
+var rectZero = new Rect({
+    origin: pointZero,
+    size: sizeZero
+});
+var insetsZero = new EdgeInsets({top: 0, bottom: 0, left: 0, right: 0});
+
 Geometry.isSizeZero = function(size){
-    return size.height == 0 & size.width == 0;
+    return size.height == sizeZero.height & size.width == sizeZero.width;
+}
+
+Geometry.getPointZero = function() {
+    return pointZero;
+}
+
+Geometry.getSizeZero = function() {
+    return sizeZero;
+}
+
+Geometry.getRectZero = function() {
+    return rectZero;
+}
+
+Geometry.getInsetsZero = function() {
+    return insetsZero;
 }
 
 module.exports = Geometry;
-},{}],326:[function(require,module,exports){
+},{"./EdgeInsets":325,"./Point":329,"./Rect":330,"./Size":331}],327:[function(require,module,exports){
 var t = require('tcomb');
 
 var IndexPath = t.struct({
@@ -21905,7 +22212,7 @@ var IndexPath = t.struct({
 module.exports = IndexPath;
 
 
-},{"tcomb":313}],327:[function(require,module,exports){
+},{"tcomb":313}],328:[function(require,module,exports){
 module.exports.IndexPath = require("./IndexPath");
 module.exports.Point = require('./Point')
 module.exports.Size = require("./Size");
@@ -21913,7 +22220,7 @@ module.exports.Rect = require("./Rect");
 module.exports.EdgeInsets = require('./EdgeInsets');
 module.exports.Geometry = require('./Geometry')
 
-},{"./EdgeInsets":324,"./Geometry":325,"./IndexPath":326,"./Point":328,"./Rect":329,"./Size":330}],328:[function(require,module,exports){
+},{"./EdgeInsets":325,"./Geometry":326,"./IndexPath":327,"./Point":329,"./Rect":330,"./Size":331}],329:[function(require,module,exports){
 var t = require('tcomb');
 
 var Point = t.struct({
@@ -21922,7 +22229,7 @@ var Point = t.struct({
 }, 'Point');
 
 module.exports = Point;
-},{"tcomb":313}],329:[function(require,module,exports){
+},{"tcomb":313}],330:[function(require,module,exports){
 var t = require('tcomb');
 var Size = require('./Size');
 var Point = require('./Point');
@@ -21934,7 +22241,7 @@ var Rect = t.struct({
 
 module.exports = Rect;
 
-},{"./Point":328,"./Size":330,"tcomb":313}],330:[function(require,module,exports){
+},{"./Point":329,"./Size":331,"tcomb":313}],331:[function(require,module,exports){
 var t = require('tcomb');
 
 var Size = t.struct({
@@ -21954,4 +22261,18 @@ var Size = t.struct({
 
 module.exports = Size;
 
-},{"tcomb":313}]},{},[1]);
+},{"tcomb":313}],332:[function(require,module,exports){
+var t = require('tcomb');
+
+var Models = require('../Model/Models');
+var Enums = require('../Enums/Enums');
+
+var ScrollViewDelegate = t.struct({
+    "scrollViewDidScroll": t.maybe(t.func([Enums.ScrollDirectionType, t.Num, t.Num], t.Nil)), //Direction, ScrollPosition (scrollTop), BottomOfView (ScrollTOp = BottomView means scrolled to bottom)
+    "scrollViewWilLBeginDragging": t.maybe(t.func(t.Nil, t.Nil)),
+    "scrollViewDidScrollToTop": t.maybe(t.func(t.Nil, t.Nil))
+}, 'ScrollViewDelegate');
+
+module.exports.Protocol = ScrollViewDelegate;
+
+},{"../Enums/Enums":319,"../Model/Models":328,"tcomb":313}]},{},[1]);

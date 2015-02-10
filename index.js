@@ -8,6 +8,7 @@ var CollectionViewDatasource = require('./src/react/Datasource/CollectionViewDat
 var CollectionViewLayout = require('./src/react/Layout/CollectionViewLayout');
 var CollectionViewLayoutDelegate = require('./src/react/Layout/CollectionViewLayoutDelegate');
 var CollectionViewLayoutAttributes = require('./src/react/Layout/CollectionViewLayoutAttributes');
+var ScrollViewDelegate = require('./src/react/ScrollView/ScrollViewDelegate');
 
 //impl
 var CollectionViewFlowLayout = require('./src/react/Layout/CollectionViewFlowLayout');
@@ -20,6 +21,8 @@ var exports = {
     CollectionViewLayout: CollectionViewLayout,
     CollectionViewLayoutDelegate: CollectionViewLayoutDelegate,
     CollectionViewLayoutAttributes: CollectionViewLayoutAttributes,
+    ScrollViewDelegate: ScrollViewDelegate,
+
     Models: Models,
     Enums: require('./src/react/Enums/Enums'),
     React: require('react/addons'),

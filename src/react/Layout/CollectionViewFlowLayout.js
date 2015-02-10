@@ -46,7 +46,7 @@ function CollectionViewFlowLayoutFactory(width, layoutDelegate, itemSize, insets
         _availableSpacing = Math.floor(_width/_numberOfColumns);
         _horizontalMargin = Math.floor(_availableSpacing/(_numberOfColumns*2));
         var ratio = (_horizontalMargin)/(_requestedInsets.left + _requestedInsets.right);
-        console.log("requested to actual insets ratio: " + ratio);
+        //console.log("requested to actual insets ratio: " + ratio);
         _actualInsets = new Models.EdgeInsets({top: _requestedInsets.top, bottom: _requestedInsets.bottom, left: Math.floor(_requestedInsets.left*ratio), right: Math.floor(_requestedInsets.right*ratio)});
         _itemTotalWidth = _itemSize.width + _actualInsets.left + _actualInsets.right;
         _rowHeight = _itemSize.height + _requestedInsets.top + _requestedInsets.bottom;
