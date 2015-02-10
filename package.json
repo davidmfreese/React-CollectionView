@@ -1,0 +1,40 @@
+{
+  "name": "React-CollectionView",
+  "version": "0.0.1",
+  "description": "UICollectionView inspired React component",
+  "main": "index.js",
+  "keywords": [
+    "React",
+    "UICollectionView"
+  ],
+  "author": "David M Freese <davidmfreese@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "watch": "watchify index.js -o dist/react-collectionview.js -v",
+    "browserify": "browserify index.js > dist/react-collectionview.js",
+    "browserify-standalone": "browserify index.js --standalone ReactCollectionView> dist/react-collectionview-standalone.js",
+    "build": "npm run browserify && npm run browserify-standalone",
+    "start": "npm run watch & nodemon server.js",
+    "test": "mocha ./test/ --recursive"
+  },
+  "dependencies": {
+    "react": "^0.12.2",
+    "tcomb": "^0.4.0",
+    "tcomb-react": "^0.2.0",
+    "tcomb-validation": "^0.3.0"
+  },
+  "devDependencies": {
+    "browserify": "~6.0.3",
+    "jsdom": "^3.1.1",
+    "mocha": "^2.1.0",
+    "nodemon": "^1.2.1",
+    "react-tools": "^0.12.2",
+    "reactify": "~0.14.0",
+    "watchify": "~2.0.0"
+  },
+  "browserify": {
+    "transform": [
+      "reactify"
+    ]
+  }
+}

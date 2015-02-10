@@ -1,0 +1,4 @@
+--debug
+--compilers jsx:./test/compiler.js--debug
+--compilers jsx:./test/compiler.js
+--recursive
