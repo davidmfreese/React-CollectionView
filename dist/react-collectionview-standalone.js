@@ -1,6 +1,6 @@
 !function(e){if("object"==typeof exports&&"undefined"!=typeof module)module.exports=e();else if("function"==typeof define&&define.amd)define([],e);else{var o;"undefined"!=typeof window?o=window:"undefined"!=typeof global?o=global:"undefined"!=typeof self&&(o=self),o.ReactCollectionView=e()}}(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 
-var Models = require('./src/react/Model/Models')
+var Models = require('./src/react/Model/Models');
 
 var CollectionView = require('./src/react/CollectionView.jsx');
 var CollectionViewDelegate = require('./src/react/CollectionViewDelegate');
@@ -4209,9 +4209,8 @@ function assign(target, sources) {
   }
 
   return to;
-};
-
-module.exports = assign;
+    }
+    module.exports = assign;
 
 },{}],32:[function(require,module,exports){
 (function (process){
@@ -21742,11 +21741,11 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
             overflowX: 'hidden',
             overflowY: 'scroll',
             position: 'absolute'
-        }
+        };
 
         var clearStyle = {
             clear:"both"
-        }
+        };
 
         var contentSize = this.state.collectionViewContentSize;
         if(!contentSize) {
@@ -21755,7 +21754,7 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
         var wrapperStyle = {
             width:frame.size.width,
             height:contentSize.height
-        }
+        };
 
         return (
         React.DOM.div({className: this.props.className ? this.props.className + '-container' : 'scroll-container', 
@@ -21791,7 +21790,7 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
         return rect;
     },
     onScroll: function(e) {
-        var scrollBottom = this.props.frame.size.height;
+        var scrollBottom = this.state.collectionViewContentSize.height;
 
         var scrollTop = e.target.scrollTop;
         if(this.props.scrollViewDelegate != null && this.props.scrollViewDelegate.scrollViewDidScroll != null) {
@@ -21889,7 +21888,7 @@ var ScrollDirectionType = require('./ScrollDirectionType');
 var Enums = {
     CollectionElementType: CollectionElementType,
     ScrollDirectionType: ScrollDirectionType
-}
+};
 
 module.exports = Enums;
 
@@ -21932,7 +21931,7 @@ function CollectionViewFlowLayoutFactory(width, layoutDelegate, itemSize, insets
     var _numberOfColumns;
     var _columnSpacing;
     var _availableSpacing;
-    var _rowHeight
+    var _rowHeight;
     var _numberOfTotalRows;
     var _contentSize;
     var _horizontalMargin;
@@ -21953,7 +21952,7 @@ function CollectionViewFlowLayoutFactory(width, layoutDelegate, itemSize, insets
         _itemTotalWidth = _itemSize.width + _actualInsets.left + _actualInsets.right;
         _rowHeight = _itemSize.height + _requestedInsets.top + _requestedInsets.bottom;
         _numberOfTotalRows = Math.ceil(numberItems/_numberOfColumns);
-    }
+    };
 
     var setContentSize = function() {
         if(Models.Geometry.isSizeZero(_itemSize)) {
@@ -21965,7 +21964,7 @@ function CollectionViewFlowLayoutFactory(width, layoutDelegate, itemSize, insets
         }
 
        _contentSize = Models.Size({height:_numberOfTotalRows*_rowHeight, width: _itemTotalWidth});
-    }
+    };
 
     //setContentSize();
 
@@ -22074,7 +22073,7 @@ var CollectionViewDatasource = require('../Datasource/CollectionViewDatasource')
 
 var LayoutModel = {};
 
-LayoutModel.ArrayOfLayoutAttributes = t.list(CollectionViewLayoutAttributes.Protocol, "ArrayOfLayoutAttributes")
+LayoutModel.ArrayOfLayoutAttributes = t.list(CollectionViewLayoutAttributes.Protocol, "ArrayOfLayoutAttributes");
 
 var CollectionViewLayoutProtocol = t.struct({
     "layoutDelegate": CollectionViewLayoutDelegate.Protocol,
@@ -22182,23 +22181,23 @@ var insetsZero = new EdgeInsets({top: 0, bottom: 0, left: 0, right: 0});
 
 Geometry.isSizeZero = function(size){
     return size.height == sizeZero.height & size.width == sizeZero.width;
-}
+};
 
 Geometry.getPointZero = function() {
     return pointZero;
-}
+};
 
 Geometry.getSizeZero = function() {
     return sizeZero;
-}
+};
 
 Geometry.getRectZero = function() {
     return rectZero;
-}
+};
 
 Geometry.getInsetsZero = function() {
     return insetsZero;
-}
+};
 
 module.exports = Geometry;
 },{"./EdgeInsets":325,"./Point":329,"./Rect":330,"./Size":331}],327:[function(require,module,exports){
@@ -22214,11 +22213,11 @@ module.exports = IndexPath;
 
 },{"tcomb":313}],328:[function(require,module,exports){
 module.exports.IndexPath = require("./IndexPath");
-module.exports.Point = require('./Point')
+module.exports.Point = require('./Point');
 module.exports.Size = require("./Size");
 module.exports.Rect = require("./Rect");
 module.exports.EdgeInsets = require('./EdgeInsets');
-module.exports.Geometry = require('./Geometry')
+module.exports.Geometry = require('./Geometry');
 
 },{"./EdgeInsets":325,"./Geometry":326,"./IndexPath":327,"./Point":329,"./Rect":330,"./Size":331}],329:[function(require,module,exports){
 var t = require('tcomb');

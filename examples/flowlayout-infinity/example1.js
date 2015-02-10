@@ -25,7 +25,7 @@ function loadMoreData(batchSize){
         }
         setTimeout(function() {
             loadMoreInterval = null;
-        }, 1000)
+        }, 1000);
         invalidateLayout();
     }, 2000);
 }
@@ -46,7 +46,7 @@ function SimpleCellFactory(data) {
             var cellStyle = {
                 "text-align": "center",
                 "margin-top": cellSize.height/2 - 10
-            }
+            };
             var Data = React.createElement('div', {style: cellStyle}, _data);
             return React.createElement('div', {className:"simpleCell"}, Data);
         },
@@ -106,7 +106,7 @@ function getProps() {
 
     var scrollViewDelegate = new rCV.ScrollViewDelegate.Protocol({
         "scrollViewDidScroll": function(scrollDirectionType, scrollTop, bottom){
-            if(scrollTop + infinityLoadMoreBuffer > bottom) {
+            if(scrollDirectionType == "ScrollDirectionTypeVeriticalDown" && scrollTop + infinityLoadMoreBuffer + collectionViewSize.height > bottom) {
                 if(!loadMoreInterval) {
                     loadMoreData(33);
                 }
@@ -132,7 +132,7 @@ function getProps() {
         collectionViewLayout: flowLayout,
         scrollViewDelegate: scrollViewDelegate,
         frame: frame
-    }
+    };
 
     return props;
 }

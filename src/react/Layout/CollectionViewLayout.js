@@ -7,7 +7,7 @@ var CollectionViewDatasource = require('../Datasource/CollectionViewDatasource')
 
 var LayoutModel = {};
 
-LayoutModel.ArrayOfLayoutAttributes = t.list(CollectionViewLayoutAttributes.Protocol, "ArrayOfLayoutAttributes")
+LayoutModel.ArrayOfLayoutAttributes = t.list(CollectionViewLayoutAttributes.Protocol, "ArrayOfLayoutAttributes");
 
 var CollectionViewLayoutProtocol = t.struct({
     "layoutDelegate": CollectionViewLayoutDelegate.Protocol,

@@ -30,7 +30,7 @@ function CollectionViewFlowLayoutFactory(width, layoutDelegate, itemSize, insets
     var _numberOfColumns;
     var _columnSpacing;
     var _availableSpacing;
-    var _rowHeight
+    var _rowHeight;
     var _numberOfTotalRows;
     var _contentSize;
     var _horizontalMargin;
@@ -51,7 +51,7 @@ function CollectionViewFlowLayoutFactory(width, layoutDelegate, itemSize, insets
         _itemTotalWidth = _itemSize.width + _actualInsets.left + _actualInsets.right;
         _rowHeight = _itemSize.height + _requestedInsets.top + _requestedInsets.bottom;
         _numberOfTotalRows = Math.ceil(numberItems/_numberOfColumns);
-    }
+    };
 
     var setContentSize = function() {
         if(Models.Geometry.isSizeZero(_itemSize)) {
@@ -63,7 +63,7 @@ function CollectionViewFlowLayoutFactory(width, layoutDelegate, itemSize, insets
         }
 
        _contentSize = Models.Size({height:_numberOfTotalRows*_rowHeight, width: _itemTotalWidth});
-    }
+    };
 
     //setContentSize();
 

@@ -8,4 +8,4 @@ module.exports = function(markup) {
         userAgent: 'node.js'
     };
     // ... add whatever browser globals your tests might need ...
-}
+};

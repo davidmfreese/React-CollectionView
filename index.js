@@ -1,5 +1,5 @@
 
-var Models = require('./src/react/Model/Models')
+var Models = require('./src/react/Model/Models');
 
 var CollectionView = require('./src/react/CollectionView.jsx');
 var CollectionViewDelegate = require('./src/react/CollectionViewDelegate');

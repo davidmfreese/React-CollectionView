@@ -26,7 +26,7 @@ function SimpleCellFactory(data) {
             var cellStyle = {
                 "text-align": "center",
                 "margin-top": cellSize.height/2 - 10
-            }
+            };
             var Data = React.createElement('div', {style: cellStyle}, _data);
             return React.createElement('div', {className:"simpleCell"}, Data);
         },
@@ -97,8 +97,8 @@ var props = {
     frame: frame,
     collectionViewDelegate: collectionViewDelegate,
     collectionViewLayout: flowLayout
-}
+};
 
-var collectionView = React.createElement(rCV.CollectionView.View, props)
+var collectionView = React.createElement(rCV.CollectionView.View, props);
 
 React.render(collectionView, document.getElementById('reactContainer'));

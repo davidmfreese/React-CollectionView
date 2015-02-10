@@ -128,11 +128,11 @@ var CollectionView = React.createClass({
             overflowX: 'hidden',
             overflowY: 'scroll',
             position: 'absolute'
-        }
+        };
 
         var clearStyle = {
             clear:"both"
-        }
+        };
 
         var contentSize = this.state.collectionViewContentSize;
         if(!contentSize) {
@@ -141,7 +141,7 @@ var CollectionView = React.createClass({
         var wrapperStyle = {
             width:frame.size.width,
             height:contentSize.height
-        }
+        };
 
         return (
         <div className={this.props.className ? this.props.className + '-container' : 'scroll-container'}
@@ -177,7 +177,7 @@ var CollectionView = React.createClass({
         return rect;
     },
     onScroll: function(e) {
-        var scrollBottom = this.props.frame.size.height;
+        var scrollBottom = this.state.collectionViewContentSize.height;
 
         var scrollTop = e.target.scrollTop;
         if(this.props.scrollViewDelegate != null && this.props.scrollViewDelegate.scrollViewDidScroll != null) {
