@@ -12,7 +12,7 @@ var CollectionViewLayoutAttributes = require('./src/react/Layout/CollectionViewL
 var ScrollViewDelegate = require('./src/react/ScrollView/ScrollViewDelegate');
 
 //impl
-var CollectionViewFlowLayout = require('./src/react/Layout/CollectionViewFlowLayout');
+var CollectionViewFlowLayout = require('./src/react/Layout/FlowLayout/CollectionViewFlowLayout');
 
 var exports = {
     CollectionView: CollectionView,
@@ -34,7 +34,7 @@ var exports = {
 module.exports = exports;
 
 
-},{"./src/react/Cell/CollectionViewCell.jsx":314,"./src/react/CollectionView.jsx":315,"./src/react/CollectionViewDelegate":316,"./src/react/Datasource/CollectionViewDatasource":317,"./src/react/Enums/Enums":319,"./src/react/Layout/CollectionViewFlowLayout":321,"./src/react/Layout/CollectionViewLayout":322,"./src/react/Layout/CollectionViewLayoutAttributes":323,"./src/react/Layout/CollectionViewLayoutDelegate":324,"./src/react/Model/Models":328,"./src/react/ScrollView/ScrollViewDelegate":332,"react/addons":3}],2:[function(require,module,exports){
+},{"./src/react/Cell/CollectionViewCell.jsx":314,"./src/react/CollectionView.jsx":315,"./src/react/CollectionViewDelegate":316,"./src/react/Datasource/CollectionViewDatasource":317,"./src/react/Enums/Enums":319,"./src/react/Layout/CollectionViewLayout":321,"./src/react/Layout/CollectionViewLayoutAttributes":322,"./src/react/Layout/CollectionViewLayoutDelegate":323,"./src/react/Layout/FlowLayout/CollectionViewFlowLayout":324,"./src/react/Model/Models":332,"./src/react/ScrollView/ScrollViewDelegate":336,"react/addons":3}],2:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -21611,7 +21611,7 @@ module.exports.Protocol = CollectionViewCellProtocol;
 //  willTransitionFromLayout:toLayout:
 //  didTransitionFromLayout:toLayout:
 
-},{"../Layout/CollectionViewLayoutAttributes":323,"../Model/IndexPath":327,"react":164,"tcomb":313,"tcomb-react":165}],315:[function(require,module,exports){
+},{"../Layout/CollectionViewLayoutAttributes":322,"../Model/IndexPath":331,"react":164,"tcomb":313,"tcomb-react":165}],315:[function(require,module,exports){
 /** @jsx React.DOM */
 var React = require('react/addons');
 var t = require('tcomb');
@@ -21801,9 +21801,9 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
         var scrollTop = e.target.scrollTop;
         if(this.props.scrollViewDelegate != null && this.props.scrollViewDelegate.scrollViewDidScroll != null) {
             var previousScrollTop = this.state.scrollTop;
-            var scrollDirection = "ScrollDirectionTypeVeriticalUp";
+            var scrollDirection = "ScrollDirectionTypeVerticalUp";
             if(previousScrollTop < scrollTop) {
-                scrollDirection = "ScrollDirectionTypeVeriticalDown";
+                scrollDirection = "ScrollDirectionTypeVerticalDown";
             }
             this.props.scrollViewDelegate.scrollViewDidScroll(scrollDirection, scrollTop, scrollBottom);
         }
@@ -21847,7 +21847,7 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
 });
 
 module.exports.View = CollectionView;
-},{"./CollectionViewDelegate":316,"./Datasource/CollectionViewDatasource":317,"./Enums/Enums":319,"./Layout/CollectionViewLayout":322,"./Layout/CollectionViewLayoutAttributes":323,"./Model/Models":328,"./ScrollView/ScrollViewDelegate":332,"react/addons":3,"tcomb":313,"tcomb-react":165}],316:[function(require,module,exports){
+},{"./CollectionViewDelegate":316,"./Datasource/CollectionViewDatasource":317,"./Enums/Enums":319,"./Layout/CollectionViewLayout":321,"./Layout/CollectionViewLayoutAttributes":322,"./Model/Models":332,"./ScrollView/ScrollViewDelegate":336,"react/addons":3,"tcomb":313,"tcomb-react":165}],316:[function(require,module,exports){
 var t = require('tcomb');
 
 var Models = require('./Model/Models');
@@ -21865,7 +21865,7 @@ var CollectionViewDelegateProtocol = t.struct({
 }, 'CollectionViewDelegateProtocol');
 
 module.exports.Protocol = CollectionViewDelegateProtocol;
-},{"./Model/Models":328,"tcomb":313}],317:[function(require,module,exports){
+},{"./Model/Models":332,"tcomb":313}],317:[function(require,module,exports){
 var t = require('tcomb');
 
 var IndexPath = require('../Model/IndexPath');
@@ -21880,7 +21880,7 @@ var CollectionViewDatasourceProtocol = t.struct({
 
 module.exports.Protocol = CollectionViewDatasourceProtocol;
 
-},{"../Cell/CollectionViewCell.jsx":314,"../Model/IndexPath":327,"tcomb":313}],318:[function(require,module,exports){
+},{"../Cell/CollectionViewCell.jsx":314,"../Model/IndexPath":331,"tcomb":313}],318:[function(require,module,exports){
 var t = require('tcomb');
 var CollectionElementType = t.enums.of('CollectionElementTypeCell CollectionElementTypeSupplementaryView CollectionElementTypeDecorationView', 'CollectionElementType');
 
@@ -21902,7 +21902,7 @@ module.exports = Enums;
 
 },{"./CollectionElementType":318,"./ScrollDirectionType":320}],320:[function(require,module,exports){
 var t = require('tcomb');
-var ScrollDirectionType = t.enums.of('ScrollDirectionTypeNone ScrollDirectionTypeHorizontal ScrollDirectionTypeHorizontalLeft ScrollDirectionTypeHorizontalRight ScrollDirectionTypeVeritical ScrollDirectionTypeVeriticalUp ScrollDirectionTypeVeriticalDown', 'ScrollDirectionType');
+var ScrollDirectionType = t.enums.of('ScrollDirectionTypeHorizontal ScrollDirectionTypeVertical ScrollDirectionTypeVerticalDown ScrollDirectionTypeVerticalUp ', 'ScrollDirectionType');
 
 module.exports = ScrollDirectionType;
 
@@ -21910,277 +21910,123 @@ module.exports = ScrollDirectionType;
 var t = require('tcomb');
 
 var Models = require('../Model/Models');
-var Enums = require('../Enums/Enums');
-var CollectionViewDatasource = require('./CollectionViewLayout');
-var CollectionViewLayout = require('./CollectionViewLayout');
 var CollectionViewLayoutDelegate = require('./CollectionViewLayoutDelegate');
 var CollectionViewLayoutAttributes = require('./CollectionViewLayoutAttributes');
+var CollectionViewDatasource = require('../Datasource/CollectionViewDatasource');
 
-var VerticalSectionLayoutDetails = t.struct({
-    Frame: Models.Rect,
-    NumberItems: t.Num,
-    NumberOfTotalRows: t.Num,
-    ItemTotalWidth: t.Num,
-    NumberOfColumns: t.Num,
-    ActualInteritemSpacing: t.Num,
-    MinimumLineSpacing: t.Num,
-    RowHeight: t.Num,
-    SectionInsets: Models.EdgeInsets,
-    HeaderReferenceSize:Models.Size,
-    FooterReferenceSize:Models.Size
-}, 'SectionLayoutDetails');
+var LayoutModel = {};
 
-VerticalSectionLayoutDetails.prototype.getEstimatedRowForPoint = function(point) {
-    //zero based
-    return Math.max(0, Math.floor((point.y - this.Frame.origin.y + this.MinimumLineSpacing)/(this.RowHeight + this.MinimumLineSpacing)));
-};
+LayoutModel.ArrayOfLayoutAttributes = t.list(CollectionViewLayoutAttributes.Protocol, "ArrayOfLayoutAttributes");
 
-VerticalSectionLayoutDetails.prototype.getStartingIndexForRow = function(row) {
-    //zero based
-    return Math.max(0, row*this.NumberOfColumns - this.NumberOfColumns);
-};
+var CollectionViewLayoutProtocol = t.struct({
+    "layoutDelegate": CollectionViewLayoutDelegate.Protocol,
+    "getCollectionViewContentSize": t.func(t.Nil, Models.Size),
+    "prepareLayout": t.func(t.Nil, t.Nil),
+    "layoutAttributesForElementsInRect":t.func(Models.Rect, LayoutModel.ArrayOfLayoutAttributes),
+    "layoutAttributesForItemAtIndexPath":t.func(Models.IndexPath, CollectionViewLayoutAttributes.Protocol),
+    "prepareForCollectionViewUpdates": t.func(t.Nil, t.Any),
+    "invalidateLayout": t.func(t.Nil, t.Nil)
+}, 'CollectionViewLayoutProtocol');
 
-VerticalSectionLayoutDetails.prototype.getRowForIndex = function(indexPath) {
-    //zero based
-    return Math.floor(indexPath.row/this.NumberOfColumns);
-};
+module.exports.Protocol = CollectionViewLayoutProtocol;
+module.exports.Model = LayoutModel;
 
-var FlowLayoutOptions = t.struct({
-    flowDirection: Enums.ScrollDirectionType,
-    width: t.Num,
-    height: t.Num,
-    minimumLineSpacing: t.maybe(t.Num),
-    minimumInteritemSpacing: t.maybe(t.Num),
-    sectionInsets: t.maybe(Models.EdgeInsets),
-    itemSize: t.maybe(Models.Size),
-    headerReferenceSize: t.maybe(Models.Size),
-    footerReferenceSize: t.maybe(Models.Size)
-},' FlowLayoutOptions');
+},{"../Datasource/CollectionViewDatasource":317,"../Model/Models":332,"./CollectionViewLayoutAttributes":322,"./CollectionViewLayoutDelegate":323,"tcomb":313}],322:[function(require,module,exports){
+var t = require('tcomb');
+var tReact = require('tcomb-react');
+
+var Models = require('../Model/Models');
+var CollectionElementType = require('../Enums/CollectionElementType');
+
+var CollectionViewLayoutAttributesProtocol = t.struct({
+    "indexPath": Models.IndexPath,
+    "representedElementCategory": t.func(t.Nil, t.Str),
+    "representedElementKind": t.func(t.Nil, t.Str),
+    "frame": Models.Rect,
+    "size": Models.Size,
+    "hidden": t.Bool
+}, 'CollectionViewLayoutAttributesProtocol');
+
+module.exports.Protocol = CollectionViewLayoutAttributesProtocol;
+},{"../Enums/CollectionElementType":318,"../Model/Models":332,"tcomb":313,"tcomb-react":165}],323:[function(require,module,exports){
+var t = require('tcomb');
+
+var Models = require('../Model/Models');
+var CollectionViewDatasource = require('../Datasource/CollectionViewDatasource');
+
+var CollectionViewLayoutDelegate = t.struct({
+    "numberItemsInSection": t.func(Models.IndexPath, t.Num),
+    "numberOfSectionsInCollectionView": t.maybe(t.func(t.Nil, t.Num)),
+    "sizeForItemAtIndexPath": t.maybe(t.func(Models.IndexPath, Models.Size)),
+    "insetForSectionAtIndex": t.maybe(t.func(Models.IndexPath, Models.EdgeInsets)),
+    "minimumLineSpacingForSectionAtIndex": t.maybe(t.func(Models.IndexPath, t.Num)),
+    "shouldSelectItemAtIndexPath": t.maybe(t.func(Models.IndexPath, t.Bool))
+}, 'CollectionViewLayoutDelegate');
+
+module.exports.Protocol = CollectionViewLayoutDelegate;
+},{"../Datasource/CollectionViewDatasource":317,"../Model/Models":332,"tcomb":313}],324:[function(require,module,exports){
+var exports = {};
+
+exports.Layout = require('./FlowLayout');
+exports.Options = require('./FlowLayoutOptions');
+exports.HorizontalScroll = require('./HorizontalFlowLayout');
+exports.VerticalScroll = require('./VerticalFlowLayout');
+
+module.exports = exports;
+},{"./FlowLayout":325,"./FlowLayoutOptions":326,"./HorizontalFlowLayout":327,"./VerticalFlowLayout":328}],325:[function(require,module,exports){
+var t = require('tcomb');
+
+var Models = require('../../Model/Models');
+var Enums = require('../../Enums/Enums');
+var FlowLayoutOptions = require('./FlowLayoutOptions');
+//var HorizontalFlowLayout = require('./HorizontalFlowLayout');
+var VerticalFlowLayout = require('./VerticalFlowLayout');
+var CollectionViewDatasource = require('./../CollectionViewLayout');
+var CollectionViewLayout = require('./../CollectionViewLayout');
+var CollectionViewLayoutDelegate = require('./../CollectionViewLayoutDelegate');
+var CollectionViewLayoutAttributes = require('./../CollectionViewLayoutAttributes');
 
 function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
     CollectionViewLayoutDelegate.Protocol.is(layoutDelegate);
-    FlowLayoutOptions.is(opts);
+    var sanitizedOpts = FlowLayoutOptions.SanitizeOptions(opts);
 
-    var _constrainedHeightOrWidth = 0;
-    var _itemSize = Models.Geometry.getSizeZero();
-    var _sectionInsets = Models.Geometry.getInsetsZero();
-    var _totalContentSize = Models.Geometry.getSizeZero();
     var _sectionLayoutDetails = [];
-    var _minInteritemSpacing = 0;
-    var _minLineSpacing = 0;
-    var _headerReferenceSize = Models.Geometry.getSizeZero();
-    var _footerReferenceSize = Models.Geometry.getSizeZero();
+    var _totalContentSize = Models.Geometry.getSizeZero();
+    var _constrainedHeightOrWidth = 0;
 
-    if(opts.flowDirection != "ScrollDirectionTypeVertical") {
-        //TODO: Horizontal Scrolling
-        throw "Horizontal Scrolling not implemented.";
-    }
-    if(!opts.itemSize || Models.Geometry.isSizeZero(opts.itemSize)) {
-        throw "Non uniform item size is not implemented."
-    }
-    if(opts.itemSize) {
-        Models.Size.is(opts.itemSize);
-        _itemSize = opts.itemSize;
-    }
-    if(opts.sectionInsets) {
-        Models.EdgeInsets.is(opts.sectionInsets);
-        _sectionInsets = opts.sectionInsets;
-    }
-    if(opts.flowDirection == "ScrollDirectionTypeVertical") {
-        _constrainedHeightOrWidth = opts.width;
-    }
-    if(opts.minimumInteritemSpacing) {
-        _minInteritemSpacing = opts.minimumInteritemSpacing;
-    }
-    if(opts.minimumLineSpacing) {
-        _minLineSpacing = opts.minimumLineSpacing;
-    }
-    if(opts.headerReferenceSize && Models.Size.is(opts.headerReferenceSize)) {
-        _headerReferenceSize = opts.headerReferenceSize;
-    }
-    if(opts.footerReferenceSize && Models.Size.is(opts.footerReferenceSize)) {
-        _footerReferenceSize = opts.footerReferenceSize;
-    }
-
-    var setLayoutForVerticalSection = function(indexPath) {
-        if(!_sectionLayoutDetails) {
-            _sectionLayoutDetails = [];
+    var setConstrainedHeightOrWidth = function() {
+        if(sanitizedOpts.flowDirection == "ScrollDirectionTypeVertical") {
+            _constrainedHeightOrWidth = sanitizedOpts.width;
+        } else if(sanitizedOpts.flowDirection == "ScrollDirectionTypeHorizontal") {
+            _constrainedHeightOrWidth = sanitizedOpts.height;
         }
-
-        var numberItems = layoutDelegate.numberItemsInSection(indexPath);
-        var availableWidth = _constrainedHeightOrWidth - _sectionInsets.left - _sectionInsets.right;
-        var numberOfColumns =  Math.floor((availableWidth - _itemSize.width)/(_itemSize.width + _minInteritemSpacing)) + 1;
-        var actualInteritemSpacing = Math.floor((availableWidth - _itemSize.width*numberOfColumns)/(numberOfColumns - 1));
-        var itemTotalWidth = _itemSize.width;
-        var rowHeight = _itemSize.height;
-        var numberOfTotalRows = Math.ceil(numberItems/numberOfColumns);
-        var totalHeight = numberOfTotalRows*rowHeight + (numberOfTotalRows - 1)*_minLineSpacing;
-        totalHeight += _headerReferenceSize.height + _footerReferenceSize.height;
-        totalHeight += _sectionInsets.top + _sectionInsets.bottom;
-        var sectionSize = Models.Size({width: _constrainedHeightOrWidth, height: totalHeight});
-
-        var startY = 0;
-        var previousSection = indexPath.section - 1;
-        if(previousSection < 0 ) {
-            previousSection = 0;
-        }
-        if(_sectionLayoutDetails && _sectionLayoutDetails[previousSection]) {
-            for (var i = 0; i <= indexPath.section - 1; i++) {
-                startY += _sectionLayoutDetails[i].Frame.size.height;
-            }
-        }
-
-        var sectionLayout = new VerticalSectionLayoutDetails({
-            Frame: new Models.Rect({
-                origin: new Models.Point({x: 0, y: startY}),
-                size: sectionSize
-            }),
-            NumberItems: numberItems,
-            NumberOfTotalRows: numberOfTotalRows,
-            ItemTotalWidth: itemTotalWidth,
-            NumberOfColumns: numberOfColumns,
-            RowHeight: rowHeight,
-            ActualInteritemSpacing: actualInteritemSpacing,
-            MinimumLineSpacing: _minLineSpacing,
-            SectionInsets: _sectionInsets,
-            HeaderReferenceSize:_headerReferenceSize,
-            FooterReferenceSize:_footerReferenceSize
-
-        });
-
-        _totalContentSize = new Models.Size({ width: _constrainedHeightOrWidth, height: startY + sectionSize.height});
-        _sectionLayoutDetails[indexPath.section] = sectionLayout;
     };
 
+    setConstrainedHeightOrWidth();
+
     var prepareLayout = function() {
-        if(opts.flowDirection == "ScrollDirectionTypeVertical") {
+        if(sanitizedOpts.flowDirection == "ScrollDirectionTypeVertical") {
             _sectionLayoutDetails = [];
             _totalContentSize = Models.Geometry.getSizeZero();
+            setConstrainedHeightOrWidth();
             var numberOfSections = layoutDelegate.numberOfSectionsInCollectionView.call(this, null);
             var totalHeight = 0;
+            var startY = 0;
             for (var i = 0; i < numberOfSections; i++) {
                 var indexPath = new Models.IndexPath({row: 0, section: i});
-                setLayoutForVerticalSection(indexPath);
-                var section = _sectionLayoutDetails[indexPath.section];
-                totalHeight += section.Frame.size.height;
+                var numberItemsInSection = layoutDelegate.numberItemsInSection(indexPath);
+                var sectionLayoutInfo = VerticalFlowLayout.CreateLayoutDetailsForSection(indexPath, numberItemsInSection, startY, sanitizedOpts);
+                _sectionLayoutDetails[i] = sectionLayoutInfo;
+                totalHeight += sectionLayoutInfo.Frame.size.height;
+
+                startY += sectionLayoutInfo.Frame.size.height;
             }
 
             _totalContentSize = new Models.Size({height: totalHeight, width: _constrainedHeightOrWidth});
+        } else if(opts.flowDirection == "ScrollDirectionTypeHorizontal") {
+            //Coming soon
         }
-        //TODO: horizontal scrolling
     };
-
-    var getSections = function(rect) {
-        var sections = [];
-        var startSection = -1;
-        var endSection = -1;
-
-        if(!_sectionLayoutDetails) {
-            prepareLayout();
-        }
-        var numberOfSections = layoutDelegate.numberOfSectionsInCollectionView.call(this, null);
-        for(var i = 0; i < numberOfSections; i++) {
-            var layout = _sectionLayoutDetails[i];
-            var topSectionHigherThanTopRect = layout.Frame.origin.y <= rect.origin.y;
-            var topSectionLowerThanTopRect = layout.Frame.origin.y + layout.Frame.size.height >= rect.origin.y;
-
-            var topSectionHigherThanBotRect = layout.Frame.origin.y <= rect.origin.y + rect.size.height;
-            var botSectionLowerThanBotRect = layout.Frame.origin.y + layout.Frame.size.height >= rect.origin.y + rect.size.height;
-
-            if(startSection <= 0 && topSectionHigherThanTopRect && topSectionLowerThanTopRect) {
-                startSection = i;
-            }
-
-            if(endSection <= 0 && topSectionHigherThanBotRect && botSectionLowerThanBotRect) {
-                endSection = i;
-            }
-        }
-
-        if(endSection == -1) {
-            endSection = startSection;
-        }
-
-        for(var i = startSection; i <= endSection; i++) {
-            sections.push(i);
-        }
-
-        return sections;
-    };
-
-    var layoutAttributesForItemAtIndexPathVertical = function(indexPath) {
-        if(opts.flowDirection != "ScrollDirectionTypeVertical") {
-            return null;
-        }
-
-        Models.IndexPath.is(indexPath);
-        var section = _sectionLayoutDetails[indexPath.section];
-
-        var row = section.getRowForIndex(indexPath);
-        var y = section.Frame.origin.y + row * section.RowHeight + section.MinimumLineSpacing * (row) + section.HeaderReferenceSize.height + section.SectionInsets.top;
-        var column = indexPath.row % section.NumberOfColumns;
-        var x = column * section.ItemTotalWidth + column * section.ActualInteritemSpacing + section.SectionInsets.left;
-        var origin = new Models.Point({x: x, y: y});
-        var size = new Models.Size({height: _itemSize.height, width: _itemSize.width});
-        var frame = new Models.Rect({origin: origin, size: size});
-
-        var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
-            "indexPath": indexPath,
-            "representedElementCategory": function(){
-                return "CollectionElementTypeCell";
-            },
-            "representedElementKind": function(){
-                return "default"
-            },
-            "frame": frame,
-            "size": size,
-            "hidden": false
-        });
-
-        return layoutAttributes;
-    };
-
-    var layoutAttributesForSupplementaryViewVertical = function(indexPath, kind) {
-        var layoutAttributes = null;
-        var section = _sectionLayoutDetails[indexPath.section];
-
-        if(kind == "header") {
-            var frame = new Models.Rect({
-                origin: new Models.Point({x: 0, y: section.Frame.origin.y}),
-                size: new Models.Size({height: section.HeaderReferenceSize.height, width: section.HeaderReferenceSize.width})
-            });
-            var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
-                "indexPath": indexPath,
-                "representedElementCategory": function(){
-                    return "CollectionElementTypeSupplementaryView";
-                },
-                "representedElementKind": function(){
-                    return kind.toString();
-                },
-                "frame": frame,
-                "size": frame.size,
-                "hidden": false
-            });
-        } else if(kind == "footer") {
-            var frame = new Models.Rect({
-                origin: new Models.Point({x: 0, y: section.Frame.origin.y + section.Frame.size.height - section.FooterReferenceSize.height}),
-                size: new Models.Size({height: section.FooterReferenceSize.height, width: section.FooterReferenceSize.width})
-            });
-            var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
-                "indexPath": indexPath,
-                "representedElementCategory": function(){
-                    return "CollectionElementTypeSupplementaryView";
-                },
-                "representedElementKind": function(){
-                    return kind;
-                },
-                "frame": frame,
-                "size": frame.size,
-                "hidden": false
-            });
-        }
-
-        return layoutAttributes;
-    }
 
     var CollectionViewFlowLayout = new CollectionViewLayout.Protocol({
         "layoutDelegate": layoutDelegate,
@@ -22217,7 +22063,7 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
             }
             if(opts.flowDirection == "ScrollDirectionTypeVertical") {
 
-                var sections = getSections(rect);
+                var sections = VerticalFlowLayout.GetSectionsForRect(rect, _sectionLayoutDetails);
                 var firstSection = _sectionLayoutDetails[sections[0]];
                 var currentY = firstSection.Frame.origin.y;
                 for (var j = 0; j < sections.length; j++) {
@@ -22229,7 +22075,7 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
                         break;
                     }
 
-                    var header = layoutAttributesForSupplementaryViewVertical(indexPath, "header");
+                    var header = VerticalFlowLayout.LayoutAttributesForSupplementaryView(indexPath, _sectionLayoutDetails[indexPath.section], "header");
                     if(header && !Models.Geometry.isSizeZero(header.frame.size)) {
                         layoutAttributesInRect.push(header);
                     }
@@ -22253,7 +22099,7 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
                         }
                     }
 
-                    var footer = layoutAttributesForSupplementaryViewVertical(indexPath, "footer");
+                    var footer = VerticalFlowLayout.LayoutAttributesForSupplementaryView(indexPath, _sectionLayoutDetails[indexPath.section], "footer");
                     if(footer && !Models.Geometry.isSizeZero(footer.frame.size)) {
                         layoutAttributesInRect.push(footer);
                     }
@@ -22265,7 +22111,7 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
         "layoutAttributesForItemAtIndexPath": function(indexPath) {
 
             if((opts.flowDirection == "ScrollDirectionTypeVertical")) {
-                var attributes = layoutAttributesForItemAtIndexPathVertical(indexPath);
+                var attributes = VerticalFlowLayout.LayoutAttributesForItemAtIndexPath(indexPath, _sectionLayoutDetails[indexPath.section], sanitizedOpts.itemSize);
                 return attributes;
             }
         },
@@ -22282,65 +22128,325 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
 
 module.exports = CollectionViewFlowLayoutFactory;
 
-},{"../Enums/Enums":319,"../Model/Models":328,"./CollectionViewLayout":322,"./CollectionViewLayoutAttributes":323,"./CollectionViewLayoutDelegate":324,"tcomb":313}],322:[function(require,module,exports){
+},{"../../Enums/Enums":319,"../../Model/Models":332,"./../CollectionViewLayout":321,"./../CollectionViewLayoutAttributes":322,"./../CollectionViewLayoutDelegate":323,"./FlowLayoutOptions":326,"./VerticalFlowLayout":328,"tcomb":313}],326:[function(require,module,exports){
 var t = require('tcomb');
 
-var Models = require('../Model/Models');
-var CollectionViewLayoutDelegate = require('./CollectionViewLayoutDelegate');
-var CollectionViewLayoutAttributes = require('./CollectionViewLayoutAttributes');
-var CollectionViewDatasource = require('../Datasource/CollectionViewDatasource');
+var Models = require('../../Model/Models');
+var Enums = require('../../Enums/Enums');
 
-var LayoutModel = {};
+var FlowLayoutOptions = t.struct({
+    flowDirection: Enums.ScrollDirectionType,
+    width: t.Num,
+    height: t.Num,
+    minimumLineSpacing: t.maybe(t.Num),
+    minimumInteritemSpacing: t.maybe(t.Num),
+    sectionInsets: t.maybe(Models.EdgeInsets),
+    itemSize: t.maybe(Models.Size),
+    headerReferenceSize: t.maybe(Models.Size),
+    footerReferenceSize: t.maybe(Models.Size)
+},' FlowLayoutOptions');
 
-LayoutModel.ArrayOfLayoutAttributes = t.list(CollectionViewLayoutAttributes.Protocol, "ArrayOfLayoutAttributes");
+module.exports.Options = FlowLayoutOptions;
 
-var CollectionViewLayoutProtocol = t.struct({
-    "layoutDelegate": CollectionViewLayoutDelegate.Protocol,
-    "getCollectionViewContentSize": t.func(t.Nil, Models.Size),
-    "prepareLayout": t.func(t.Nil, t.Nil),
-    "layoutAttributesForElementsInRect":t.func(Models.Rect, LayoutModel.ArrayOfLayoutAttributes),
-    "layoutAttributesForItemAtIndexPath":t.func(Models.IndexPath, CollectionViewLayoutAttributes.Protocol),
-    "prepareForCollectionViewUpdates": t.func(t.Nil, t.Any),
-    "invalidateLayout": t.func(t.Nil, t.Nil)
-}, 'CollectionViewLayoutProtocol');
+function sanitizeOptions(opts) {
+    FlowLayoutOptions.is(opts);
 
-module.exports.Protocol = CollectionViewLayoutProtocol;
-module.exports.Model = LayoutModel;
+    var _constrainedHeightOrWidth = 0;
+    var _itemSize = Models.Geometry.getSizeZero();
+    var _sectionInsets = Models.Geometry.getInsetsZero();
+    var _minInteritemSpacing = 0;
+    var _minLineSpacing = 0;
+    var _headerReferenceSize = Models.Geometry.getSizeZero();
+    var _footerReferenceSize = Models.Geometry.getSizeZero();
 
-},{"../Datasource/CollectionViewDatasource":317,"../Model/Models":328,"./CollectionViewLayoutAttributes":323,"./CollectionViewLayoutDelegate":324,"tcomb":313}],323:[function(require,module,exports){
+    if(opts.flowDirection != "ScrollDirectionTypeVertical" && opts.flowDirection == "ScrollDirectionTypeHorizontal") {
+        throw "Unsupported flow direction";
+    }
+    if(!opts.itemSize || Models.Geometry.isSizeZero(opts.itemSize)) {
+        throw "Non uniform item size is not implemented."
+    }
+    if(opts.itemSize) {
+        Models.Size.is(opts.itemSize);
+        _itemSize = opts.itemSize;
+    }
+    if(opts.sectionInsets) {
+        Models.EdgeInsets.is(opts.sectionInsets);
+        _sectionInsets = opts.sectionInsets;
+    }
+    if(opts.flowDirection == "ScrollDirectionTypeVertical") {
+        _constrainedHeightOrWidth = opts.width;
+    } else if (opts.flowDirection == "ScrollDirectionTypeHorizontal") {
+        _constrainedHeightOrWidth = opts.height;
+    }
+    if(opts.minimumInteritemSpacing) {
+        _minInteritemSpacing = opts.minimumInteritemSpacing;
+    }
+    if(opts.minimumLineSpacing) {
+        _minLineSpacing = opts.minimumLineSpacing;
+    }
+    if(opts.headerReferenceSize && Models.Size.is(opts.headerReferenceSize)) {
+        _headerReferenceSize = opts.headerReferenceSize;
+    }
+    if(opts.footerReferenceSize && Models.Size.is(opts.footerReferenceSize)) {
+        _footerReferenceSize = opts.footerReferenceSize;
+    }
+
+    var sanitizedOptions = new FlowLayoutOptions({
+        flowDirection: opts.flowDirection,
+        width: _constrainedHeightOrWidth,
+        height: _constrainedHeightOrWidth,
+        minimumLineSpacing: _minLineSpacing,
+        minimumInteritemSpacing: _minInteritemSpacing,
+        sectionInsets: _sectionInsets,
+        itemSize: _itemSize,
+        headerReferenceSize: _headerReferenceSize,
+        footerReferenceSize: _footerReferenceSize
+    });
+
+    return sanitizedOptions;
+}
+
+module.exports.SanitizeOptions = sanitizeOptions;
+
+},{"../../Enums/Enums":319,"../../Model/Models":332,"tcomb":313}],327:[function(require,module,exports){
+//
+//var setLayoutForHorizontalSection = function(indexPath) {
+//    if(!_sectionLayoutDetails) {
+//        _sectionLayoutDetails = [];
+//    }
+//
+//    var numberItems = layoutDelegate.numberItemsInSection(indexPath);
+//    var availableHeight = _constrainedHeightOrWidth - _sectionInsets.top - _sectionInsets.right;
+//    var numberOfRows =  Math.floor((availableHeight - _itemSize.height)/(_itemSize.height + _minLineSpacing)) + 1;
+//    var actualInteritemSpacing = Math.floor((availableHeight - _itemSize.width*numberOfRows)/(numberOfRows - 1));
+//    var itemTotalHeight = _itemSize.height;
+//    var columnWidth = _itemSize.width;
+//    var numberOfTotalColumns = Math.ceil(numberItems/numberOfRows);
+//    var totalWidth = numberOfTotalColumns*columnWidth + (numberOfTotalColumns - 1)*_minLineSpacing;
+//    totalWidth += _headerReferenceSize.height + _footerReferenceSize.height;
+//    totalWidth += _sectionInsets.left + _sectionInsets.right;
+//    var sectionSize = Models.Size({width: totalWidth, height: _constrainedHeightOrWidth});
+//
+//    var startX = 0;
+//    var previousSection = indexPath.section - 1;
+//    if(previousSection < 0 ) {
+//        previousSection = 0;
+//    }
+//    if(_sectionLayoutDetails && _sectionLayoutDetails[previousSection]) {
+//        for (var i = 0; i <= indexPath.section - 1; i++) {
+//            startX += _sectionLayoutDetails[i].Frame.size.width;
+//        }
+//    }
+//
+//    var sectionLayout = new VerticalSectionLayoutDetails({
+//        Frame: new Models.Rect({
+//            origin: new Models.Point({x: 0, y: startY}),
+//            size: sectionSize
+//        }),
+//        NumberItems: numberItems,
+//        NumberOfTotalRows: numberOfTotalRows,
+//        ItemTotalWidth: itemTotalWidth,
+//        NumberOfColumns: numberOfColumns,
+//        RowHeight: rowHeight,
+//        ActualInteritemSpacing: actualInteritemSpacing,
+//        MinimumLineSpacing: _minLineSpacing,
+//        SectionInsets: _sectionInsets,
+//        HeaderReferenceSize:_headerReferenceSize,
+//        FooterReferenceSize:_footerReferenceSize
+//
+//    });
+//
+//    _totalContentSize = new Models.Size({ width: _constrainedHeightOrWidth, height: startY + sectionSize.height});
+//    _sectionLayoutDetails[indexPath.section] = sectionLayout;
+//};
+
+
+},{}],328:[function(require,module,exports){
 var t = require('tcomb');
-var tReact = require('tcomb-react');
 
-var Models = require('../Model/Models');
-var CollectionElementType = require('../Enums/CollectionElementType');
+var Models = require('../../Model/Models');
+var Enums = require('../../Enums/Enums');
+var CollectionViewLayoutAttributes = require('../../Layout/CollectionViewLayoutAttributes');
 
-var CollectionViewLayoutAttributesProtocol = t.struct({
-    "indexPath": Models.IndexPath,
-    "representedElementCategory": t.func(t.Nil, t.Str),
-    "representedElementKind": t.func(t.Nil, t.Str),
-    "frame": Models.Rect,
-    "size": Models.Size,
-    "hidden": t.Bool
-}, 'CollectionViewLayoutAttributesProtocol');
+var VerticalSectionLayoutDetails = t.struct({
+    Frame: Models.Rect,
+    NumberItems: t.Num,
+    NumberOfTotalRows: t.Num,
+    ItemTotalWidth: t.Num,
+    NumberOfColumns: t.Num,
+    ActualInteritemSpacing: t.Num,
+    MinimumLineSpacing: t.Num,
+    RowHeight: t.Num,
+    SectionInsets: Models.EdgeInsets,
+    HeaderReferenceSize: Models.Size,
+    FooterReferenceSize: Models.Size
+}, 'SectionLayoutDetails');
 
-module.exports.Protocol = CollectionViewLayoutAttributesProtocol;
-},{"../Enums/CollectionElementType":318,"../Model/Models":328,"tcomb":313,"tcomb-react":165}],324:[function(require,module,exports){
-var t = require('tcomb');
+VerticalSectionLayoutDetails.prototype.getEstimatedRowForPoint = function (point) {
+    //zero based
+    return Math.max(0, Math.floor((point.y - this.Frame.origin.y + this.MinimumLineSpacing) / (this.RowHeight + this.MinimumLineSpacing)));
+};
 
-var Models = require('../Model/Models');
-var CollectionViewDatasource = require('../Datasource/CollectionViewDatasource');
+VerticalSectionLayoutDetails.prototype.getStartingIndexForRow = function (row) {
+    //zero based
+    return Math.max(0, row * this.NumberOfColumns - this.NumberOfColumns);
+};
 
-var CollectionViewLayoutDelegate = t.struct({
-    "numberItemsInSection": t.func(Models.IndexPath, t.Num),
-    "numberOfSectionsInCollectionView": t.maybe(t.func(t.Nil, t.Num)),
-    "sizeForItemAtIndexPath": t.maybe(t.func(Models.IndexPath, Models.Size)),
-    "insetForSectionAtIndex": t.maybe(t.func(Models.IndexPath, Models.EdgeInsets)),
-    "minimumLineSpacingForSectionAtIndex": t.maybe(t.func(Models.IndexPath, t.Num)),
-    "shouldSelectItemAtIndexPath": t.maybe(t.func(Models.IndexPath, t.Bool))
-}, 'CollectionViewLayoutDelegate');
+VerticalSectionLayoutDetails.prototype.getRowForIndex = function (indexPath) {
+    //zero based
+    return Math.floor(indexPath.row / this.NumberOfColumns);
+};
 
-module.exports.Protocol = CollectionViewLayoutDelegate;
-},{"../Datasource/CollectionViewDatasource":317,"../Model/Models":328,"tcomb":313}],325:[function(require,module,exports){
+function creationSectionLayoutDetails(indexPath, numberItemsInSection, startY, opts) {
+    var _constrainedHeightOrWidth = opts.width;
+
+    var numberItems = numberItemsInSection;
+    var availableWidth = _constrainedHeightOrWidth - opts.sectionInsets.left - opts.sectionInsets.right;
+    var numberOfColumns = Math.floor((availableWidth - opts.itemSize.width) / (opts.itemSize.width + opts.minimumInteritemSpacing)) + 1;
+    var actualInteritemSpacing = Math.floor((availableWidth - opts.itemSize.width * numberOfColumns) / (numberOfColumns - 1));
+    var itemTotalWidth = opts.itemSize.width;
+    var rowHeight = opts.itemSize.height;
+    var numberOfTotalRows = Math.ceil(numberItems / numberOfColumns);
+    var totalHeight = numberOfTotalRows * rowHeight + (numberOfTotalRows - 1) * opts.minimumLineSpacing;
+    totalHeight += opts.headerReferenceSize.height + opts.footerReferenceSize.height;
+    totalHeight += opts.sectionInsets.top + opts.sectionInsets.bottom;
+    var sectionSize = Models.Size({width: _constrainedHeightOrWidth, height: totalHeight});
+
+    var sectionLayout = new VerticalSectionLayoutDetails({
+        Frame: new Models.Rect({
+            origin: new Models.Point({x: 0, y: startY}),
+            size: sectionSize
+        }),
+        NumberItems: numberItems,
+        NumberOfTotalRows: numberOfTotalRows,
+        ItemTotalWidth: itemTotalWidth,
+        NumberOfColumns: numberOfColumns,
+        RowHeight: rowHeight,
+        ActualInteritemSpacing: actualInteritemSpacing,
+        MinimumLineSpacing: opts.minimumLineSpacing,
+        SectionInsets: opts.sectionInsets,
+        HeaderReferenceSize: opts.headerReferenceSize,
+        FooterReferenceSize: opts.footerReferenceSize
+    });
+
+    return sectionLayout;
+}
+
+function getSections(rect, sectionsLayoutDetails) {
+    var sections = [];
+    var startSection = -1;
+    var endSection = -1;
+
+    var numberOfSections = sectionsLayoutDetails.length;
+    for(var i = 0; i < numberOfSections; i++) {
+        var layout = sectionsLayoutDetails[i];
+        var topSectionHigherThanTopRect = layout.Frame.origin.y <= rect.origin.y;
+        var topSectionLowerThanTopRect = layout.Frame.origin.y + layout.Frame.size.height >= rect.origin.y;
+
+        var topSectionHigherThanBotRect = layout.Frame.origin.y <= rect.origin.y + rect.size.height;
+        var botSectionLowerThanBotRect = layout.Frame.origin.y + layout.Frame.size.height >= rect.origin.y + rect.size.height;
+
+        if(startSection <= 0 && topSectionHigherThanTopRect && topSectionLowerThanTopRect) {
+            startSection = i;
+        }
+
+        if(endSection <= 0 && topSectionHigherThanBotRect && botSectionLowerThanBotRect) {
+            endSection = i;
+        }
+    }
+
+    if(endSection == -1) {
+        endSection = startSection;
+    }
+
+    for(var i = startSection; i <= endSection; i++) {
+        sections.push(i);
+    }
+
+    return sections;
+};
+
+function layoutAttributesForItemAtIndexPath(indexPath, sectionLayoutInfo, itemSize) {
+    Models.IndexPath.is(indexPath);
+    VerticalSectionLayoutDetails.is(sectionLayoutInfo);
+    Models.Size.is(itemSize);
+
+    var row = sectionLayoutInfo.getRowForIndex(indexPath);
+    var y = sectionLayoutInfo.Frame.origin.y + row * sectionLayoutInfo.RowHeight;
+    y += sectionLayoutInfo.MinimumLineSpacing * (row) + sectionLayoutInfo.HeaderReferenceSize.height + sectionLayoutInfo.SectionInsets.top;
+    var column = indexPath.row % sectionLayoutInfo.NumberOfColumns;
+    var x = column * sectionLayoutInfo.ItemTotalWidth + column * sectionLayoutInfo.ActualInteritemSpacing + sectionLayoutInfo.SectionInsets.left;
+    var origin = new Models.Point({x: x, y: y});
+    var size = new Models.Size({height: itemSize.height, width: itemSize.width});
+    var frame = new Models.Rect({origin: origin, size: size});
+
+    var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
+        "indexPath": indexPath,
+        "representedElementCategory": function(){
+            return "CollectionElementTypeCell";
+        },
+        "representedElementKind": function(){
+            return "default"
+        },
+        "frame": frame,
+        "size": size,
+        "hidden": false
+    });
+
+    return layoutAttributes;
+};
+
+function layoutAttributesForSupplementaryView(indexPath, sectionLayoutInfo, kind) {
+    var layoutAttributes = null;
+
+    if(kind == "header") {
+        var frame = new Models.Rect({
+            origin: new Models.Point({x: 0, y: sectionLayoutInfo.Frame.origin.y}),
+            size: new Models.Size({height: sectionLayoutInfo.HeaderReferenceSize.height, width: sectionLayoutInfo.HeaderReferenceSize.width})
+        });
+        var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
+            "indexPath": indexPath,
+            "representedElementCategory": function(){
+                return "CollectionElementTypeSupplementaryView";
+            },
+            "representedElementKind": function(){
+                return kind.toString();
+            },
+            "frame": frame,
+            "size": frame.size,
+            "hidden": false
+        });
+    } else if(kind == "footer") {
+        var frame = new Models.Rect({
+            origin: new Models.Point({x: 0, y: sectionLayoutInfo.Frame.origin.y + sectionLayoutInfo.Frame.size.height - sectionLayoutInfo.FooterReferenceSize.height}),
+            size: new Models.Size({height: sectionLayoutInfo.FooterReferenceSize.height, width: sectionLayoutInfo.FooterReferenceSize.width})
+        });
+        var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
+            "indexPath": indexPath,
+            "representedElementCategory": function(){
+                return "CollectionElementTypeSupplementaryView";
+            },
+            "representedElementKind": function(){
+                return kind;
+            },
+            "frame": frame,
+            "size": frame.size,
+            "hidden": false
+        });
+    }
+
+    return layoutAttributes;
+}
+
+module.exports = {
+    LayoutDetails: VerticalSectionLayoutDetails,
+    CreateLayoutDetailsForSection: creationSectionLayoutDetails,
+    GetSectionsForRect: getSections,
+    LayoutAttributesForItemAtIndexPath: layoutAttributesForItemAtIndexPath,
+    LayoutAttributesForSupplementaryView: layoutAttributesForSupplementaryView
+}
+
+},{"../../Enums/Enums":319,"../../Layout/CollectionViewLayoutAttributes":322,"../../Model/Models":332,"tcomb":313}],329:[function(require,module,exports){
 var t = require('tcomb');
 
 var EdgeInsets = t.struct({
@@ -22353,7 +22459,7 @@ var EdgeInsets = t.struct({
 module.exports = EdgeInsets;
 
 
-},{"tcomb":313}],326:[function(require,module,exports){
+},{"tcomb":313}],330:[function(require,module,exports){
 var Point = require('./Point');
 var Size = require('./Size');
 var Rect = require('./Rect');
@@ -22410,7 +22516,7 @@ Geometry.rectIntersects = function(rect1, rect2) {
 };
 
 module.exports = Geometry;
-},{"./EdgeInsets":325,"./Point":329,"./Rect":330,"./Size":331}],327:[function(require,module,exports){
+},{"./EdgeInsets":329,"./Point":333,"./Rect":334,"./Size":335}],331:[function(require,module,exports){
 var t = require('tcomb');
 
 var IndexPath = t.struct({
@@ -22421,7 +22527,7 @@ var IndexPath = t.struct({
 module.exports = IndexPath;
 
 
-},{"tcomb":313}],328:[function(require,module,exports){
+},{"tcomb":313}],332:[function(require,module,exports){
 module.exports.IndexPath = require("./IndexPath");
 module.exports.Point = require('./Point');
 module.exports.Size = require("./Size");
@@ -22429,7 +22535,7 @@ module.exports.Rect = require("./Rect");
 module.exports.EdgeInsets = require('./EdgeInsets');
 module.exports.Geometry = require('./Geometry');
 
-},{"./EdgeInsets":325,"./Geometry":326,"./IndexPath":327,"./Point":329,"./Rect":330,"./Size":331}],329:[function(require,module,exports){
+},{"./EdgeInsets":329,"./Geometry":330,"./IndexPath":331,"./Point":333,"./Rect":334,"./Size":335}],333:[function(require,module,exports){
 var t = require('tcomb');
 
 var Point = t.struct({
@@ -22438,7 +22544,7 @@ var Point = t.struct({
 }, 'Point');
 
 module.exports = Point;
-},{"tcomb":313}],330:[function(require,module,exports){
+},{"tcomb":313}],334:[function(require,module,exports){
 var t = require('tcomb');
 var Size = require('./Size');
 var Point = require('./Point');
@@ -22450,7 +22556,7 @@ var Rect = t.struct({
 
 module.exports = Rect;
 
-},{"./Point":329,"./Size":331,"tcomb":313}],331:[function(require,module,exports){
+},{"./Point":333,"./Size":335,"tcomb":313}],335:[function(require,module,exports){
 var t = require('tcomb');
 
 var Size = t.struct({
@@ -22470,7 +22576,7 @@ var Size = t.struct({
 
 module.exports = Size;
 
-},{"tcomb":313}],332:[function(require,module,exports){
+},{"tcomb":313}],336:[function(require,module,exports){
 var t = require('tcomb');
 
 var Models = require('../Model/Models');
@@ -22484,4 +22590,4 @@ var ScrollViewDelegate = t.struct({
 
 module.exports.Protocol = ScrollViewDelegate;
 
-},{"../Enums/Enums":319,"../Model/Models":328,"tcomb":313}]},{},[1]);
+},{"../Enums/Enums":319,"../Model/Models":332,"tcomb":313}]},{},[1]);

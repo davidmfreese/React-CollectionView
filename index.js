@@ -11,7 +11,7 @@ var CollectionViewLayoutAttributes = require('./src/react/Layout/CollectionViewL
 var ScrollViewDelegate = require('./src/react/ScrollView/ScrollViewDelegate');
 
 //impl
-var CollectionViewFlowLayout = require('./src/react/Layout/CollectionViewFlowLayout');
+var CollectionViewFlowLayout = require('./src/react/Layout/FlowLayout/CollectionViewFlowLayout');
 
 var exports = {
     CollectionView: CollectionView,

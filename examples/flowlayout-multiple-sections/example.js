@@ -85,7 +85,7 @@ function SupplementaryViewFactory(kind, indexPath) {
                 "margin-top": supplementaryHeight/2 - 8
             };
 
-            var Data = React.createElement('div', {style: cellStyle}, _kind + ": " + _indexPath.section);
+            var Data = React.createElement('div', {style: cellStyle}, _kind + ": " + (_indexPath.section + 1));
             var View = React.createElement('div', {className: "suppView", style: _style}, Data);
             return View;
         }
@@ -152,7 +152,7 @@ var flowLayoutOptions = {
     headerReferenceSize: new rCV.Models.Size({height: 60, width: collectionViewSize.width}),
     footerReferenceSize: new rCV.Models.Size({height: 60, width: collectionViewSize.width})
 };
-var flowLayout = rCV.CollectionViewFlowLayout(layoutDelegate, flowLayoutOptions);
+var flowLayout = rCV.CollectionViewFlowLayout.Layout(layoutDelegate, flowLayoutOptions);
 
 var frame = new rCV.Models.Rect({
     origin: new rCV.Models.Point({x:0, y:0}),

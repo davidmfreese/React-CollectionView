@@ -187,9 +187,9 @@ var CollectionView = React.createClass({
         var scrollTop = e.target.scrollTop;
         if(this.props.scrollViewDelegate != null && this.props.scrollViewDelegate.scrollViewDidScroll != null) {
             var previousScrollTop = this.state.scrollTop;
-            var scrollDirection = "ScrollDirectionTypeVeriticalUp";
+            var scrollDirection = "ScrollDirectionTypeVerticalUp";
             if(previousScrollTop < scrollTop) {
-                scrollDirection = "ScrollDirectionTypeVeriticalDown";
+                scrollDirection = "ScrollDirectionTypeVerticalDown";
             }
             this.props.scrollViewDelegate.scrollViewDidScroll(scrollDirection, scrollTop, scrollBottom);
         }

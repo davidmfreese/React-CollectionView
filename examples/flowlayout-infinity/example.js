@@ -112,7 +112,7 @@ function getProps() {
     var infinityLoadMoreBuffer = collectionViewSize.height/2;
     var scrollViewDelegate = new rCV.ScrollViewDelegate.Protocol({
         "scrollViewDidScroll": function(scrollDirectionType, scrollTop, bottom){
-            if(scrollDirectionType == "ScrollDirectionTypeVeriticalDown" && scrollTop + infinityLoadMoreBuffer + collectionViewSize.height > bottom) {
+            if(scrollDirectionType == "ScrollDirectionTypeVerticalDown" && scrollTop + infinityLoadMoreBuffer + collectionViewSize.height > bottom) {
                 if(!loadMoreInterval) {
                     loadMoreData(33);
                 }
@@ -139,7 +139,7 @@ function getProps() {
         itemSize: itemSize
     };
 
-    var flowLayout = rCV.CollectionViewFlowLayout(layoutDelegate, flowLayoutOptions);
+    var flowLayout = rCV.CollectionViewFlowLayout.Layout(layoutDelegate, flowLayoutOptions);
 
     var props = {
         collectionViewDatasource: datasourceDelegate,

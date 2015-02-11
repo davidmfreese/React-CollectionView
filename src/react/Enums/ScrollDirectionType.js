@@ -1,4 +1,4 @@
 var t = require('tcomb');
-var ScrollDirectionType = t.enums.of('ScrollDirectionTypeNone ScrollDirectionTypeHorizontal ScrollDirectionTypeHorizontalLeft ScrollDirectionTypeHorizontalRight ScrollDirectionTypeVeritical ScrollDirectionTypeVeriticalUp ScrollDirectionTypeVeriticalDown', 'ScrollDirectionType');
+var ScrollDirectionType = t.enums.of('ScrollDirectionTypeHorizontal ScrollDirectionTypeVertical ScrollDirectionTypeVerticalDown ScrollDirectionTypeVerticalUp ', 'ScrollDirectionType');
 
 module.exports = ScrollDirectionType;

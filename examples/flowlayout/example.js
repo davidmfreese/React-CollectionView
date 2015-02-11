@@ -102,7 +102,7 @@ var flowLayoutOptions = {
     itemSize: itemSize
 };
 
-var flowLayout = rCV.CollectionViewFlowLayout(layoutDelegate, flowLayoutOptions);
+var flowLayout = rCV.CollectionViewFlowLayout.Layout(layoutDelegate, flowLayoutOptions);
 
 
 var frame = new rCV.Models.Rect({
