@@ -23,9 +23,9 @@ function loadMoreData(batchSize){
         for(var i = currentIndex; i < i + batchSize && i < allData.length; i++) {
             datasource.push(allData[i]);
         }
-        setTimeout(function() {
-            loadMoreInterval = null;
-        }, 1000);
+
+        clearInterval(loadMoreInterval);
+        loadMoreInterval = null;
         invalidateLayout();
     }, 2000);
 }
@@ -33,6 +33,7 @@ function loadMoreData(batchSize){
 //Create your cell style
 function SimpleCellFactory(data) {
     var _data = data;
+    var _style = {};
     var SimpleCell = new rCV.CollectionViewCell.Protocol({
         "reuseIdentifier": "default",
         "highlighted": false,
@@ -40,7 +41,13 @@ function SimpleCellFactory(data) {
         "prepareForReuse": function () {
         },
         "applyLayoutAttributes": function (attributes) {
-            //TODO:
+            _style = {
+                position: "absolute",
+                top: attributes.frame.origin.y,
+                left: attributes.frame.origin.x,
+                height:attributes.frame.size.height,
+                width: attributes.frame.size.width
+            };
         },
         "getContentView": function () {
             var cellStyle = {
@@ -48,7 +55,7 @@ function SimpleCellFactory(data) {
                 "margin-top": cellSize.height/2 - 10
             };
             var Data = React.createElement('div', {style: cellStyle}, _data);
-            return React.createElement('div', {className:"simpleCell"}, Data);
+            return React.createElement('div', {className:"simpleCell", style: _style}, Data);
         },
         "setData": function (data) {
             _data = data;
@@ -61,8 +68,6 @@ function SimpleCellFactory(data) {
 
 var itemSize = new rCV.Models.Size({height:100, width:100});
 var insets = new rCV.Models.EdgeInsets({top:10, left:10, bottom:10, right:10});
-
-var infinityLoadMoreBuffer = collectionViewSize.height/2;
 
 var frame = new rCV.Models.Rect({
     origin: new rCV.Models.Point({x:0, y:0}),
@@ -104,6 +109,7 @@ function getProps() {
         }
     });
 
+    var infinityLoadMoreBuffer = collectionViewSize.height/2;
     var scrollViewDelegate = new rCV.ScrollViewDelegate.Protocol({
         "scrollViewDidScroll": function(scrollDirectionType, scrollTop, bottom){
             if(scrollDirectionType == "ScrollDirectionTypeVeriticalDown" && scrollTop + infinityLoadMoreBuffer + collectionViewSize.height > bottom) {
@@ -124,7 +130,16 @@ function getProps() {
         willDisplayCellForItemAtIndexPath: function (indexPath) {}
     });
 
-    var flowLayout = rCV.CollectionViewFlowLayout(collectionViewSize.width, layoutDelegate, itemSize, insets);
+    var flowLayoutOptions = {
+        flowDirection: "ScrollDirectionTypeVertical",
+        width: collectionViewSize.width,
+        height: 0,
+        minimumLineSpacing: 10,
+        minimumInteritemSpacing: 10,
+        itemSize: itemSize
+    };
+
+    var flowLayout = rCV.CollectionViewFlowLayout(layoutDelegate, flowLayoutOptions);
 
     var props = {
         collectionViewDatasource: datasourceDelegate,

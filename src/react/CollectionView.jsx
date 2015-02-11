@@ -32,7 +32,8 @@ var CollectionView = React.createClass({
             isScrolling: false,
             currentLoadedRect: Models.Geometry.getRectZero(),
             defaultBlockSize: Models.Geometry.getSizeZero(),
-            frame: Models.Geometry.getRectZero()
+            frame: Models.Geometry.getRectZero(),
+            layoutAttributes: []
         };
     },
     componentDidMount: function() {
@@ -60,32 +61,33 @@ var CollectionView = React.createClass({
 
         var defaultBlockSize = this.props.frame.size;
         var currentLoadedRect = this.getRectForScrollTop(0, defaultBlockSize);
-
-        this.setState({collectionViewContentSize: contentSize, currentLoadedRect: currentLoadedRect, defaultBlockSize: defaultBlockSize});
-
+        var layoutAttributes = this.props.collectionViewLayout.layoutAttributesForElementsInRect(currentLoadedRect);
+        this.setState({collectionViewContentSize: contentSize,
+            currentLoadedRect: currentLoadedRect,
+            defaultBlockSize: defaultBlockSize,
+            scrollTop: 0,
+            currentLoadedRect: currentLoadedRect,
+            layoutAttributes: layoutAttributes});
     },
     shouldComponentUpdate: function(nextProps, nextState) {
-        //TODO: this should reload `blocks`...
-        //TODO: I think we need to check Props here too not just state
-
         var newScrollTop = nextState.scrollTop;
-
+        var newLayouts = nextState.layoutAttributes;
         var currentScrollTop = this.state.scrollTop;
         var currentLoadedRect = this.state.currentLoadedRect;
-
+        var oldLayouts = this.state.layoutAttributes;
         var isScrollUp = newScrollTop < currentScrollTop;
-
         var frame = this.props.frame;
-        var threshold = Math.max(frame.size.height/2);
-
+        var threshold = Math.max(frame.size.height);
 
         var shouldUpdate = false;
         if(nextProps && nextProps.invalidateLayout) {
             shouldUpdate = true;
             nextProps.collectionViewLayout.prepareLayout.call(this, null);
+        } else if(oldLayouts == null || oldLayouts.length != newLayouts.length) {
+            shouldUpdate = true;
         } else if(!currentLoadedRect || !currentLoadedRect.size) {
             shouldUpdate = true;
-        } else if(!isScrollUp && newScrollTop > currentLoadedRect.origin.y + currentLoadedRect.size.height - frame.size.height*3 - threshold ) {
+        } else if(!isScrollUp && newScrollTop > currentLoadedRect.origin.y + currentLoadedRect.size.height - threshold ) {
             shouldUpdate = true;
         } else if(isScrollUp && newScrollTop < currentLoadedRect.origin.y + frame.size.height + threshold) {
             shouldUpdate = true;
@@ -101,21 +103,14 @@ var CollectionView = React.createClass({
         var frame = this.props.frame;
         var rect = this.state.currentLoadedRect;
 
-        //TODO:  Should this be moved out of the render function??  check perf
         var children = [];
-        var layoutAttributes = this.props.collectionViewLayout.layoutAttributesForElementsInRect(rect);
+        var layoutAttributes = this.state.layoutAttributes;
         for(var i = 0; i < layoutAttributes.length; i++) {
             var attributes = layoutAttributes[i];
-            var style = {
-                position: "absolute",
-                top: attributes.frame.origin.y,
-                left: attributes.frame.origin.x,
-                height:attributes.frame.size.height,
-                width: attributes.frame.size.width
-            };
-
-            var Cell = this.props.collectionViewDatasource.cellForItemAtIndexPath(attributes.indexPath).getContentView();
-            children.push(<div style={style}><Cell/></div>);
+            var cell = this.props.collectionViewDatasource.cellForItemAtIndexPath(attributes.indexPath);
+            cell.applyLayoutAttributes(attributes);
+            var CellContentView = cell.getContentView();
+            children.push(<CellContentView/>);
         }
 
         if(children.length == 0) {
@@ -148,7 +143,7 @@ var CollectionView = React.createClass({
             ref="scrollable"
             style={scrollableStyle}
             onScroll={this.onScroll}>
-            <div ref="smoothScrollingWrapper" onScroll={this.onScroll} style={wrapperStyle}>
+            <div ref="smoothScrollingWrapper" style={wrapperStyle}>
                 {children}
             </div>
         </div>
@@ -218,9 +213,11 @@ var CollectionView = React.createClass({
     },
     setStateFromScrollTop: function(scrollTop) {
         var currentLoadedRect = this.getRectForScrollTop(scrollTop);
+        var layoutAttributes = this.props.collectionViewLayout.layoutAttributesForElementsInRect(currentLoadedRect);
         this.setState({
             scrollTop: scrollTop,
-            currentLoadedRect: currentLoadedRect
+            currentLoadedRect: currentLoadedRect,
+            layoutAttributes: layoutAttributes
         });
     }
 });

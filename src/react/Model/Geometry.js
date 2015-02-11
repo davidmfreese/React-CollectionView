@@ -13,8 +13,16 @@ var rectZero = new Rect({
 });
 var insetsZero = new EdgeInsets({top: 0, bottom: 0, left: 0, right: 0});
 
+Geometry.isPointZero = function(point){
+    return point.x == 0 && point.y == 0;
+};
+
 Geometry.isSizeZero = function(size){
     return size.height == sizeZero.height & size.width == sizeZero.width;
+};
+
+Geometry.isRectZero = function(rect){
+    return this.isPointZero(rect.origin) && this.isSizeZero(rect.size);
 };
 
 Geometry.getPointZero = function() {
@@ -31,6 +39,18 @@ Geometry.getRectZero = function() {
 
 Geometry.getInsetsZero = function() {
     return insetsZero;
+};
+
+Geometry.rectIntersects = function(rect1, rect2) {
+    return  !(rect1.origin.x + rect1.size.width < rect2.origin.x
+        || rect2.origin.x + rect2.size.width < rect1.origin.x
+        || rect1.origin.y + rect1.size.height < rect2.origin.y
+        || rect2.origin.y + rect2.size.width < rect1.origin.y)
+
+        || (
+                rect1.origin.x >= rect2.origin.x && rect1.origin.x <= rect2.origin.x + rect2.size.width
+                && rect1.origin.y >= rect2.origin.y && rect1.origin.y <= rect2.origin.y + rect2.size.height
+            )
 };
 
 module.exports = Geometry;

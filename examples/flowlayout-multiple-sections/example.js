@@ -6,13 +6,22 @@ var cellSize = new rCV.Models.Size({height: 100, width:100});
 
 //Data
 var datasource = [];
-for(var i = 1; i <= 10000; i++) {
-    datasource.push("Item: " + i);
+var itemsPerSection = 34;
+var numberOfSections = 5000;
+
+for(var j =1; j <= numberOfSections; j++) {
+    var sectionData = [];
+    for(var i = 1; i <= itemsPerSection; i++) {
+        sectionData.push("Sec:" + j + " Item:" + i);
+    }
+
+    datasource.push(sectionData);
 }
 
 //Create your cell style
 function SimpleCellFactory(data) {
     var _data = data;
+    var _style = {};
     var SimpleCell = new rCV.CollectionViewCell.Protocol({
         "reuseIdentifier": "default",
         "highlighted": false,
@@ -20,7 +29,13 @@ function SimpleCellFactory(data) {
         "prepareForReuse": function () {
         },
         "applyLayoutAttributes": function (attributes) {
-            //TODO:
+            _style = {
+                position: "absolute",
+                top: attributes.frame.origin.y,
+                left: attributes.frame.origin.x,
+                height:attributes.frame.size.height,
+                width: attributes.frame.size.width
+            };
         },
         "getContentView": function () {
             var cellStyle = {
@@ -28,12 +43,11 @@ function SimpleCellFactory(data) {
                 "margin-top": cellSize.height/2 - 10
             };
             var Data = React.createElement('div', {style: cellStyle}, _data);
-            return React.createElement('div', {className:"simpleCell"}, Data);
+            return React.createElement('div', {className:"simpleCell", style: _style}, Data);
         },
         "setData": function (data) {
             _data = data;
         }
-
     });
 
     return SimpleCell;
@@ -41,25 +55,23 @@ function SimpleCellFactory(data) {
 
 var datasourceDelegate = new rCV.CollectionViewDatasource.Protocol({
     numberItemsInSection: function(indexPath) {
-        return datasource.length;
+        return datasource[indexPath.section].length;
     },
     numberOfSectionsInCollectionView: function() {
-        return 1;
+        return datasource.length;
     },
     cellForItemAtIndexPath: function(indexPath) {
-        var cell = new SimpleCellFactory(datasource[indexPath.row]);
+        var cell = new SimpleCellFactory(datasource[indexPath.section][indexPath.row]);
         return cell;
     }
 });
 
-var itemSize = new rCV.Models.Size({height:100, width:100});
-var insets = new rCV.Models.EdgeInsets({top:10, left:10, bottom:10, right:10});
 var layoutDelegate = new rCV.CollectionViewLayoutDelegate.Protocol({
     numberItemsInSection: function(indexPath) {
-        return datasource.length;
+        return datasource[indexPath.section].length;
     },
     numberOfSectionsInCollectionView: function() {
-        return 1;
+        return datasource.length;
     },
     sizeForItemAtIndexPath: function(indexPath) {
         return itemSize;
@@ -85,8 +97,18 @@ var collectionViewDelegate = new rCV.CollectionViewDelegate.Protocol({
     willDisplayCellForItemAtIndexPath: function (indexPath) {}
 });
 
-var flowLayout = rCV.CollectionViewFlowLayout(collectionViewSize.width, layoutDelegate, itemSize, insets);
-
+var flowLayoutOptions = {
+    flowDirection: "ScrollDirectionTypeVertical",
+    width: collectionViewSize.width,
+    height: 0,
+    minimumLineSpacing: 5,
+    minimumInteritemSpacing: 5,
+    itemSize: new rCV.Models.Size({height:100, width:100}),
+    sectionInsets: new rCV.Models.EdgeInsets({top:10, left:0, bottom:10, right:0}),
+    headerReferenceSize: new rCV.Models.Size({height: 60, width: collectionViewSize.width}),
+    footerReferenceSize: new rCV.Models.Size({height: 60, width: collectionViewSize.width})
+};
+var flowLayout = rCV.CollectionViewFlowLayout(layoutDelegate, flowLayoutOptions);
 
 var frame = new rCV.Models.Rect({
     origin: new rCV.Models.Point({x:0, y:0}),

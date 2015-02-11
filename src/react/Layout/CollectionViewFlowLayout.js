@@ -1,159 +1,318 @@
 var t = require('tcomb');
 
 var Models = require('../Model/Models');
+var Enums = require('../Enums/Enums');
 var CollectionViewDatasource = require('./CollectionViewLayout');
 var CollectionViewLayout = require('./CollectionViewLayout');
 var CollectionViewLayoutDelegate = require('./CollectionViewLayoutDelegate');
 var CollectionViewLayoutAttributes = require('./CollectionViewLayoutAttributes');
 
-function CollectionViewFlowLayoutFactory(width, layoutDelegate, itemSize, insets) {
+var VerticalSectionLayoutDetails = t.struct({
+    Frame: Models.Rect,
+    NumberItems: t.Num,
+    NumberOfTotalRows: t.Num,
+    ItemTotalWidth: t.Num,
+    NumberOfColumns: t.Num,
+    ActualInteritemSpacing: t.Num,
+    MinimumLineSpacing: t.Num,
+    RowHeight: t.Num,
+    SectionInsets: Models.EdgeInsets,
+    HeaderReferenceSize:Models.Size,
+    FooterReferenceSize:Models.Size
+}, 'SectionLayoutDetails');
+
+VerticalSectionLayoutDetails.prototype.getEstimatedRowForPoint = function(point) {
+    //zero based
+    return Math.max(0, Math.floor((point.y - this.Frame.origin.y + this.MinimumLineSpacing)/(this.RowHeight + this.MinimumLineSpacing)));
+};
+
+VerticalSectionLayoutDetails.prototype.getStartingIndexForRow = function(row) {
+    //zero based
+    return Math.max(0, row*this.NumberOfColumns - this.NumberOfColumns);
+};
+
+VerticalSectionLayoutDetails.prototype.getRowForIndex = function(indexPath) {
+    //zero based
+    return Math.floor(indexPath.row/this.NumberOfColumns);
+};
+
+var FlowLayoutOptions = t.struct({
+    flowDirection: Enums.ScrollDirectionType,
+    width: t.Num,
+    height: t.Num,
+    minimumLineSpacing: t.maybe(t.Num),
+    minimumInteritemSpacing: t.maybe(t.Num),
+    sectionInsets: t.maybe(Models.EdgeInsets),
+    itemSize: t.maybe(Models.Size),
+    headerReferenceSize: t.maybe(Models.Size),
+    footerReferenceSize: t.maybe(Models.Size)
+},' FlowLayoutOptions');
+
+function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
     CollectionViewLayoutDelegate.Protocol.is(layoutDelegate);
+    FlowLayoutOptions.is(opts);
 
-    var _width = width;
-
+    var _constrainedHeightOrWidth = 0;
     var _itemSize = Models.Geometry.getSizeZero();
-    if(itemSize) {
-        Models.Size.is(itemSize);
-        _itemSize = itemSize;
+    var _sectionInsets = Models.Geometry.getInsetsZero();
+    var _totalContentSize = Models.Geometry.getSizeZero();
+    var _sectionLayoutDetails = [];
+    var _minInteritemSpacing = 0;
+    var _minLineSpacing = 0;
+    var _headerReferenceSize = Models.Geometry.getSizeZero();
+    var _footerReferenceSize = Models.Geometry.getSizeZero();
+
+    if(opts.flowDirection != "ScrollDirectionTypeVertical") {
+        //TODO: Horizontal Scrolling
+        throw "Horizontal Scrolling not implemented.";
+    }
+    if(!opts.itemSize || Models.Geometry.isSizeZero(opts.itemSize)) {
+        throw "Non uniform item size is not implemented."
+    }
+    if(opts.itemSize) {
+        Models.Size.is(opts.itemSize);
+        _itemSize = opts.itemSize;
+    }
+    if(opts.sectionInsets) {
+        Models.EdgeInsets.is(opts.sectionInsets);
+        _sectionInsets = opts.sectionInsets;
+    }
+    if(opts.flowDirection == "ScrollDirectionTypeVertical") {
+        _constrainedHeightOrWidth = opts.width;
+    }
+    if(opts.minimumInteritemSpacing) {
+        _minInteritemSpacing = opts.minimumInteritemSpacing;
+    }
+    if(opts.minimumLineSpacing) {
+        _minLineSpacing = opts.minimumLineSpacing;
+    }
+    if(opts.headerReferenceSize && Models.Size.is(opts.headerReferenceSize)) {
+        _headerReferenceSize = opts.headerReferenceSize;
+    }
+    if(opts.footerReferenceSize && Models.Size.is(opts.footerReferenceSize)) {
+        _footerReferenceSize = opts.footerReferenceSize;
     }
 
-    var _requestedInsets = Models.Geometry.getInsetsZero();
-    var _actualInsets = _requestedInsets;
-    if(insets) {
-        Models.EdgeInsets.is(insets);
-        _requestedInsets = insets;
-        _actualInsets = _requestedInsets;
-    }
+    var setLayoutForVerticalSection = function(indexPath) {
+        if(!_sectionLayoutDetails) {
+            _sectionLayoutDetails = [];
+        }
 
-    var _numberRows;
-    var _itemTotalWidth;
-    var _numberOfColumns;
-    var _columnSpacing;
-    var _availableSpacing;
-    var _rowHeight;
-    var _numberOfTotalRows;
-    var _contentSize;
-    var _horizontalMargin;
+        var numberItems = layoutDelegate.numberItemsInSection(indexPath);
+        var availableWidth = _constrainedHeightOrWidth - _sectionInsets.left - _sectionInsets.right;
+        var numberOfColumns =  Math.floor((availableWidth - _itemSize.width)/(_itemSize.width + _minInteritemSpacing)) + 1;
+        var actualInteritemSpacing = Math.floor((availableWidth - _itemSize.width*numberOfColumns)/(numberOfColumns - 1));
+        var itemTotalWidth = _itemSize.width;
+        var rowHeight = _itemSize.height;
+        var numberOfTotalRows = Math.ceil(numberItems/numberOfColumns);
+        var totalHeight = numberOfTotalRows*rowHeight + (numberOfTotalRows - 1)*_minLineSpacing;
+        totalHeight += _headerReferenceSize.height + _footerReferenceSize.height;
+        totalHeight += _sectionInsets.top + _sectionInsets.bottom;
+        var sectionSize = Models.Size({width: _constrainedHeightOrWidth, height: totalHeight});
+
+        var startY = 0;
+        var previousSection = indexPath.section - 1;
+        if(previousSection < 0 ) {
+            previousSection = 0;
+        }
+        if(_sectionLayoutDetails && _sectionLayoutDetails[previousSection]) {
+            for (var i = 0; i <= indexPath.section - 1; i++) {
+                startY += _sectionLayoutDetails[i].Frame.size.height;
+            }
+        }
+
+        var sectionLayout = new VerticalSectionLayoutDetails({
+            Frame: new Models.Rect({
+                origin: new Models.Point({x: 0, y: startY}),
+                size: sectionSize
+            }),
+            NumberItems: numberItems,
+            NumberOfTotalRows: numberOfTotalRows,
+            ItemTotalWidth: itemTotalWidth,
+            NumberOfColumns: numberOfColumns,
+            RowHeight: rowHeight,
+            ActualInteritemSpacing: actualInteritemSpacing,
+            MinimumLineSpacing: _minLineSpacing,
+            SectionInsets: _sectionInsets,
+            HeaderReferenceSize:_headerReferenceSize,
+            FooterReferenceSize:_footerReferenceSize
+
+        });
+
+        _totalContentSize = new Models.Size({ width: _constrainedHeightOrWidth, height: startY + sectionSize.height});
+        _sectionLayoutDetails[indexPath.section] = sectionLayout;
+    };
 
     var prepareLayout = function() {
-        if(!_requestedInsets) {
-            _requestedInsets = Models.Geometry.getInsetsZero();
-        }
+        if(opts.flowDirection == "ScrollDirectionTypeVertical") {
+            _sectionLayoutDetails = [];
+            _totalContentSize = Models.Geometry.getSizeZero();
+            var numberOfSections = layoutDelegate.numberOfSectionsInCollectionView.call(this, null);
+            var totalHeight = 0;
+            for (var i = 0; i < numberOfSections; i++) {
+                var indexPath = new Models.IndexPath({row: 0, section: i});
+                setLayoutForVerticalSection(indexPath);
+                var section = _sectionLayoutDetails[indexPath.section];
+                totalHeight += section.Frame.size.height;
+            }
 
-        var numberItems = layoutDelegate.numberItemsInSection(0);
-        var requestedItemWidth = _itemSize.width + _requestedInsets.left + _requestedInsets.right;
-        _numberOfColumns = Math.floor(_width/requestedItemWidth);
-        _availableSpacing = Math.floor(_width/_numberOfColumns);
-        _horizontalMargin = Math.floor(_availableSpacing/(_numberOfColumns*2));
-        var ratio = (_horizontalMargin)/(_requestedInsets.left + _requestedInsets.right);
-        //console.log("requested to actual insets ratio: " + ratio);
-        _actualInsets = new Models.EdgeInsets({top: _requestedInsets.top, bottom: _requestedInsets.bottom, left: Math.floor(_requestedInsets.left*ratio), right: Math.floor(_requestedInsets.right*ratio)});
-        _itemTotalWidth = _itemSize.width + _actualInsets.left + _actualInsets.right;
-        _rowHeight = _itemSize.height + _requestedInsets.top + _requestedInsets.bottom;
-        _numberOfTotalRows = Math.ceil(numberItems/_numberOfColumns);
+            _totalContentSize = new Models.Size({height: totalHeight, width: _constrainedHeightOrWidth});
+        }
+        //TODO: horizontal scrolling
     };
 
-    var setContentSize = function() {
-        if(Models.Geometry.isSizeZero(_itemSize)) {
-            console.log('no item size set');
-        }
+    var getSections = function(rect) {
+        var sections = [];
+        var startSection = -1;
+        var endSection = -1;
 
-        if(!_numberRows) {
+        if(!_sectionLayoutDetails) {
             prepareLayout();
         }
+        var numberOfSections = layoutDelegate.numberOfSectionsInCollectionView.call(this, null);
+        for(var i = 0; i < numberOfSections; i++) {
+            var layout = _sectionLayoutDetails[i];
+            var topSectionHigherThanTopRect = layout.Frame.origin.y <= rect.origin.y;
+            var topSectionLowerThanTopRect = layout.Frame.origin.y + layout.Frame.size.height >= rect.origin.y;
 
-       _contentSize = Models.Size({height:_numberOfTotalRows*_rowHeight, width: _itemTotalWidth});
+            var topSectionHigherThanBotRect = layout.Frame.origin.y <= rect.origin.y + rect.size.height;
+            var botSectionLowerThanBotRect = layout.Frame.origin.y + layout.Frame.size.height >= rect.origin.y + rect.size.height;
+
+            if(startSection <= 0 && topSectionHigherThanTopRect && topSectionLowerThanTopRect) {
+                startSection = i;
+            }
+
+            if(endSection <= 0 && topSectionHigherThanBotRect && botSectionLowerThanBotRect) {
+                endSection = i;
+            }
+        }
+
+        if(endSection == -1) {
+            endSection = startSection;
+        }
+
+        for(var i = startSection; i <= endSection; i++) {
+            sections.push(i);
+        }
+
+        return sections;
     };
 
-    //setContentSize();
+    var layoutAttributesForItemAtIndexPathVertical = function(indexPath) {
+
+        if(opts.flowDirection != "ScrollDirectionTypeVertical") {
+            return null;
+        }
+
+        Models.IndexPath.is(indexPath);
+        var section = _sectionLayoutDetails[indexPath.section];
+
+        var row = section.getRowForIndex(indexPath);
+        var y = section.Frame.origin.y + row * section.RowHeight + section.MinimumLineSpacing * (row) + section.HeaderReferenceSize.height + section.SectionInsets.top;
+        var column = indexPath.row % section.NumberOfColumns;
+        var x = column * section.ItemTotalWidth + column * section.ActualInteritemSpacing + section.SectionInsets.left;
+        var origin = new Models.Point({x: x, y: y});
+        var size = new Models.Size({height: _itemSize.height, width: _itemSize.width});
+        var frame = new Models.Rect({origin: origin, size: size});
+
+        var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
+            "indexPath": indexPath,
+            "representedElementCategory": function(){
+                return "CollectionElementTypeCell";
+            },
+            "representedElementKind": function(){
+                return "default"
+            },
+            "frame": frame,
+            "size": size,
+            "hidden": false
+        });
+
+        return layoutAttributes;
+    };
 
     var CollectionViewFlowLayout = new CollectionViewLayout.Protocol({
         "layoutDelegate": layoutDelegate,
         "getCollectionViewContentSize": function() {
-            if(_numberOfTotalRows) {
-                _contentSize = Models.Size({height: _numberOfTotalRows * _rowHeight, width: _itemTotalWidth});
+            if(_totalContentSize && _totalContentSize.width > 0) {
+                return _totalContentSize;
             }
-            else {
-                _contentSize = Models.Geometry.getSizeZero();
+
+            var numberOfSections = layoutDelegate.numberOfSectionsInCollectionView.call(this, null);
+            if(_sectionLayoutDetails && _sectionLayoutDetails[numberOfSections - 1]){
+                var height = 0;
+                for(var i = 0; i < numberOfSections; i++) {
+                    height += _sectionLayoutDetails[i].Frame.size.height;
+                }
+
+                if(height > 0) {
+                    _totalContentSize = new Models.Size({ width: _width, height: height});
+                } else {
+                    _totalContentSize = Models.Geometry.getSizeZero();
+                }
+            } else {
+                _totalContentSize = Models.Geometry.getSizeZero();
             }
-            return _contentSize;
+            return _totalContentSize;
         },
         "prepareLayout": function() {
             prepareLayout();
-            //setContentSize();
         },
         "layoutAttributesForElementsInRect": function(rect) {
             var layoutAttributesInRect = [];
-            var numberItems = this.layoutDelegate.numberItemsInSection(0);
 
-            var topRow = Math.floor(rect.origin.y/_rowHeight);
-            var bottomRow = Math.ceil((rect.origin.y + rect.size.height)/_rowHeight);
-
-            if(bottomRow > _numberOfTotalRows) {
-                bottomRow = _numberOfTotalRows;
+            if(Models.Geometry.isRectZero(rect)) {
+                return layoutAttributesInRect;
             }
+            if(opts.flowDirection == "ScrollDirectionTypeVertical") {
 
-            var firstIndex = Math.max(topRow - 1, 0)*_numberOfColumns;
-            var lastIndex = Math.min(numberItems - 1, bottomRow*_numberOfColumns - 1);
+                var sections = getSections(rect);
+                var firstSection = _sectionLayoutDetails[sections[0]];
+                var currentY = firstSection.Frame.origin.y;
+                for (var j = 0; j < sections.length; j++) {
+                    var sectionNum = sections[j];
+                    var indexPath = new Models.IndexPath({row: 0, section: sectionNum});
+                    var numberItemsInSection = this.layoutDelegate.numberItemsInSection(indexPath);
+                    var currentSection = _sectionLayoutDetails[sectionNum];
+                    if (currentSection.Frame.origin.y > rect.origin.y + rect.size.height) {
+                        break;
+                    }
 
-            for(var i = firstIndex; i <= lastIndex; i++) {
-                var indexPath = new Models.IndexPath({row: i, section: 0});
-                var layoutAttributes = this.layoutAttributesForItemAtIndexPath(indexPath);
+                    var startRow = currentSection.getEstimatedRowForPoint(rect.origin);
+                    var startIndex = currentSection.getStartingIndexForRow(startRow);
 
-                layoutAttributesInRect.push(layoutAttributes)
+                    for (var i = startIndex; i < numberItemsInSection; i++) {
+                        var indexPath = new Models.IndexPath({row: i, section: sectionNum});
+                        var layoutAttributes = this.layoutAttributesForItemAtIndexPath(indexPath);
+                        if (layoutAttributes.frame.origin.y + layoutAttributes.size.height < rect.origin.y) {
+                            continue;
+                        }
+                        if (layoutAttributes.frame.origin.y > rect.origin.y + rect.size.height) {
+                            break;
+                        }
+                        if (Models.Geometry.rectIntersects(layoutAttributes.frame, rect)) {
+                            layoutAttributesInRect.push(layoutAttributes);
+                        } else {
+                            //console.log("no intersection");
+                        }
+                    }
+                }
             }
 
             return new CollectionViewLayout.Model.ArrayOfLayoutAttributes(layoutAttributesInRect);
         },
         "layoutAttributesForItemAtIndexPath": function(indexPath) {
-            Models.IndexPath.is(indexPath);
 
-            var row = Math.floor(indexPath.row/_numberOfColumns);
-            var y = row*_rowHeight + _actualInsets.top;
-            var column = indexPath.row % _numberOfColumns;
-            var x = column*_itemTotalWidth  +  _actualInsets.left - Math.floor(_actualInsets.left/2);
-            var origin = new Models.Point({x: x, y: y});
-            var size = new Models.Size({height: _itemSize.height, width: _itemSize.width});
-            var frame = new Models.Rect({origin: origin, size: size});
-
-            var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
-                "indexPath": indexPath,
-                "representedElementCategory": function(){
-                    return "CollectionElementTypeCell";
-                },
-                "representedElementKind": function(){
-                    return "default"
-                },
-                "frame": frame,
-                "size": size,
-                "hidden": false
-            });
-
-            return layoutAttributes;
+            if((opts.flowDirection == "ScrollDirectionTypeVertical")) {
+                var attributes = layoutAttributesForItemAtIndexPathVertical(indexPath);
+                return attributes;
+            }
         },
         "prepareForCollectionViewUpdates": function() {
 
         },
         "invalidateLayout": function() {
-
-
-        }, "setItemSize": function(size) {
-            _itemSize = size;
-            this.invalidateLayout();
-        },
-        "getItemSize": function() {
-            return _itemSize;
-        },
-        "setInsets": function(insets) {
-            _requestedInsets = insets;
-            this.invalidateLayout();
-        },
-        "getInsets": function() {
-            return _insets;
-        },
-        "setWidth": function(newWidth) {
-            _width = newWidth;
-            this.invalidateLayout();
+            prepareLayout();
         }
     });
 
