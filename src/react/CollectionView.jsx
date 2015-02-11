@@ -107,10 +107,20 @@ var CollectionView = React.createClass({
         var layoutAttributes = this.state.layoutAttributes;
         for(var i = 0; i < layoutAttributes.length; i++) {
             var attributes = layoutAttributes[i];
-            var cell = this.props.collectionViewDatasource.cellForItemAtIndexPath(attributes.indexPath);
-            cell.applyLayoutAttributes(attributes);
-            var CellContentView = cell.getContentView();
-            children.push(<CellContentView/>);
+            var category = attributes.representedElementCategory.call(this, null);
+            console.log(category);
+            if(category == "CollectionElementTypeSupplementaryView") {
+                var kind = attributes.representedElementKind.call(this, null);
+                var view = this.props.collectionViewDatasource.viewForSupplementaryElementOfKind.call(this, kind, attributes.indexPath);
+                view.applyLayoutAttributes(attributes);
+                var ViewContent = view.getContentView();
+                children.push(<ViewContent/>);
+            } else { //for now default to cell
+                var cell = this.props.collectionViewDatasource.cellForItemAtIndexPath(attributes.indexPath);
+                cell.applyLayoutAttributes(attributes);
+                var CellContentView = cell.getContentView();
+                children.push(<CellContentView/>);
+            }
         }
 
         if(children.length == 0) {

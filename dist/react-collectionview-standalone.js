@@ -21721,10 +21721,20 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
         var layoutAttributes = this.state.layoutAttributes;
         for(var i = 0; i < layoutAttributes.length; i++) {
             var attributes = layoutAttributes[i];
-            var cell = this.props.collectionViewDatasource.cellForItemAtIndexPath(attributes.indexPath);
-            cell.applyLayoutAttributes(attributes);
-            var CellContentView = cell.getContentView();
-            children.push(CellContentView(null));
+            var category = attributes.representedElementCategory.call(this, null);
+            console.log(category);
+            if(category == "CollectionElementTypeSupplementaryView") {
+                var kind = attributes.representedElementKind.call(this, null);
+                var view = this.props.collectionViewDatasource.viewForSupplementaryElementOfKind.call(this, kind, attributes.indexPath);
+                view.applyLayoutAttributes(attributes);
+                var ViewContent = view.getContentView();
+                children.push(ViewContent(null));
+            } else { //for now default to cell
+                var cell = this.props.collectionViewDatasource.cellForItemAtIndexPath(attributes.indexPath);
+                cell.applyLayoutAttributes(attributes);
+                var CellContentView = cell.getContentView();
+                children.push(CellContentView(null));
+            }
         }
 
         if(children.length == 0) {
@@ -21864,8 +21874,8 @@ var CollectionViewCell = require('../Cell/CollectionViewCell.jsx');
 var CollectionViewDatasourceProtocol = t.struct({
     "numberItemsInSection": t.func(IndexPath, t.Num),
     "numberOfSectionsInCollectionView": t.maybe(t.func(t.Nil, t.Num)),
-    "cellForItemAtIndexPath": t.maybe(t.func(IndexPath, CollectionViewCell.Protocol)),
-    "viewForSupplementaryElementOfKind": t.maybe(t.func([t.Str, IndexPath], CollectionViewCell.Protocol))
+    "cellForItemAtIndexPath": t.maybe(t.func(IndexPath, t.maybe(CollectionViewCell.Protocol))),
+    "viewForSupplementaryElementOfKind": t.maybe(t.func([t.Str, IndexPath], t.maybe(CollectionViewCell.Protocol)))
 }, 'CollectionViewDatasourceProtocol');
 
 module.exports.Protocol = CollectionViewDatasourceProtocol;
@@ -22098,7 +22108,6 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
     };
 
     var layoutAttributesForItemAtIndexPathVertical = function(indexPath) {
-
         if(opts.flowDirection != "ScrollDirectionTypeVertical") {
             return null;
         }
@@ -22129,6 +22138,49 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
 
         return layoutAttributes;
     };
+
+    var layoutAttributesForSupplementaryViewVertical = function(indexPath, kind) {
+        var layoutAttributes = null;
+        var section = _sectionLayoutDetails[indexPath.section];
+
+        if(kind == "header") {
+            var frame = new Models.Rect({
+                origin: new Models.Point({x: 0, y: section.Frame.origin.y}),
+                size: new Models.Size({height: section.HeaderReferenceSize.height, width: section.HeaderReferenceSize.width})
+            });
+            var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
+                "indexPath": indexPath,
+                "representedElementCategory": function(){
+                    return "CollectionElementTypeSupplementaryView";
+                },
+                "representedElementKind": function(){
+                    return kind.toString();
+                },
+                "frame": frame,
+                "size": frame.size,
+                "hidden": false
+            });
+        } else if(kind == "footer") {
+            var frame = new Models.Rect({
+                origin: new Models.Point({x: 0, y: section.Frame.origin.y + section.Frame.size.height - section.FooterReferenceSize.height}),
+                size: new Models.Size({height: section.FooterReferenceSize.height, width: section.FooterReferenceSize.width})
+            });
+            var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
+                "indexPath": indexPath,
+                "representedElementCategory": function(){
+                    return "CollectionElementTypeSupplementaryView";
+                },
+                "representedElementKind": function(){
+                    return kind;
+                },
+                "frame": frame,
+                "size": frame.size,
+                "hidden": false
+            });
+        }
+
+        return layoutAttributes;
+    }
 
     var CollectionViewFlowLayout = new CollectionViewLayout.Protocol({
         "layoutDelegate": layoutDelegate,
@@ -22177,6 +22229,11 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
                         break;
                     }
 
+                    var header = layoutAttributesForSupplementaryViewVertical(indexPath, "header");
+                    if(header && !Models.Geometry.isSizeZero(header.frame.size)) {
+                        layoutAttributesInRect.push(header);
+                    }
+
                     var startRow = currentSection.getEstimatedRowForPoint(rect.origin);
                     var startIndex = currentSection.getStartingIndexForRow(startRow);
 
@@ -22194,6 +22251,11 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
                         } else {
                             //console.log("no intersection");
                         }
+                    }
+
+                    var footer = layoutAttributesForSupplementaryViewVertical(indexPath, "footer");
+                    if(footer && !Models.Geometry.isSizeZero(footer.frame.size)) {
+                        layoutAttributesInRect.push(footer);
                     }
                 }
             }
@@ -22254,7 +22316,7 @@ var CollectionElementType = require('../Enums/CollectionElementType');
 
 var CollectionViewLayoutAttributesProtocol = t.struct({
     "indexPath": Models.IndexPath,
-    "representedElementCategory": t.func(t.Nil, CollectionElementType),
+    "representedElementCategory": t.func(t.Nil, t.Str),
     "representedElementKind": t.func(t.Nil, t.Str),
     "frame": Models.Rect,
     "size": Models.Size,
@@ -22262,24 +22324,6 @@ var CollectionViewLayoutAttributesProtocol = t.struct({
 }, 'CollectionViewLayoutAttributesProtocol');
 
 module.exports.Protocol = CollectionViewLayoutAttributesProtocol;
-
-//Identifying the Referenced Item
-//    indexPath - Property
-//    representedElementCategory - Property
-//    representedElementKind - Property
-//    Accessing the Layout Attributes
-//    frame - Property
-//    bounds - Property
-//    center - Property
-//    size - Property
-//    transform3D - Property
-//    transform - Property
-//    alpha - Property
-//    zIndex - Property
-//    hidden - Property
-//
-//Constants
-//    CollectionElementType
 },{"../Enums/CollectionElementType":318,"../Model/Models":328,"tcomb":313,"tcomb-react":165}],324:[function(require,module,exports){
 var t = require('tcomb');
 
@@ -22296,17 +22340,6 @@ var CollectionViewLayoutDelegate = t.struct({
 }, 'CollectionViewLayoutDelegate');
 
 module.exports.Protocol = CollectionViewLayoutDelegate;
-
-//Getting the Size of Items
-//collectionView:layout:sizeForItemAtIndexPath:
-//    Getting the Section Spacing
-//collectionView:layout:insetForSectionAtIndex:
-//    collectionView:layout:minimumLineSpacingForSectionAtIndex:
-//        collectionView:layout:minimumInteritemSpacingForSectionAtIndex:
-//            Getting the Header and Footer Sizes
-//collectionView:layout:referenceSizeForHeaderInSection:
-//    collectionView:layout:referenceSizeForFooterInSection:
-
 },{"../Datasource/CollectionViewDatasource":317,"../Model/Models":328,"tcomb":313}],325:[function(require,module,exports){
 var t = require('tcomb');
 

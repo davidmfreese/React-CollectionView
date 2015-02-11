@@ -13,13 +13,3 @@ var CollectionViewLayoutDelegate = t.struct({
 }, 'CollectionViewLayoutDelegate');
 
 module.exports.Protocol = CollectionViewLayoutDelegate;
-
-//Getting the Size of Items
-//collectionView:layout:sizeForItemAtIndexPath:
-//    Getting the Section Spacing
-//collectionView:layout:insetForSectionAtIndex:
-//    collectionView:layout:minimumLineSpacingForSectionAtIndex:
-//        collectionView:layout:minimumInteritemSpacingForSectionAtIndex:
-//            Getting the Header and Footer Sizes
-//collectionView:layout:referenceSizeForHeaderInSection:
-//    collectionView:layout:referenceSizeForFooterInSection:

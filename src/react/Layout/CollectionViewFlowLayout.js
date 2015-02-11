@@ -199,7 +199,6 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
     };
 
     var layoutAttributesForItemAtIndexPathVertical = function(indexPath) {
-
         if(opts.flowDirection != "ScrollDirectionTypeVertical") {
             return null;
         }
@@ -230,6 +229,49 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
 
         return layoutAttributes;
     };
+
+    var layoutAttributesForSupplementaryViewVertical = function(indexPath, kind) {
+        var layoutAttributes = null;
+        var section = _sectionLayoutDetails[indexPath.section];
+
+        if(kind == "header") {
+            var frame = new Models.Rect({
+                origin: new Models.Point({x: 0, y: section.Frame.origin.y}),
+                size: new Models.Size({height: section.HeaderReferenceSize.height, width: section.HeaderReferenceSize.width})
+            });
+            var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
+                "indexPath": indexPath,
+                "representedElementCategory": function(){
+                    return "CollectionElementTypeSupplementaryView";
+                },
+                "representedElementKind": function(){
+                    return kind.toString();
+                },
+                "frame": frame,
+                "size": frame.size,
+                "hidden": false
+            });
+        } else if(kind == "footer") {
+            var frame = new Models.Rect({
+                origin: new Models.Point({x: 0, y: section.Frame.origin.y + section.Frame.size.height - section.FooterReferenceSize.height}),
+                size: new Models.Size({height: section.FooterReferenceSize.height, width: section.FooterReferenceSize.width})
+            });
+            var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
+                "indexPath": indexPath,
+                "representedElementCategory": function(){
+                    return "CollectionElementTypeSupplementaryView";
+                },
+                "representedElementKind": function(){
+                    return kind;
+                },
+                "frame": frame,
+                "size": frame.size,
+                "hidden": false
+            });
+        }
+
+        return layoutAttributes;
+    }
 
     var CollectionViewFlowLayout = new CollectionViewLayout.Protocol({
         "layoutDelegate": layoutDelegate,
@@ -278,6 +320,11 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
                         break;
                     }
 
+                    var header = layoutAttributesForSupplementaryViewVertical(indexPath, "header");
+                    if(header && !Models.Geometry.isSizeZero(header.frame.size)) {
+                        layoutAttributesInRect.push(header);
+                    }
+
                     var startRow = currentSection.getEstimatedRowForPoint(rect.origin);
                     var startIndex = currentSection.getStartingIndexForRow(startRow);
 
@@ -295,6 +342,11 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
                         } else {
                             //console.log("no intersection");
                         }
+                    }
+
+                    var footer = layoutAttributesForSupplementaryViewVertical(indexPath, "footer");
+                    if(footer && !Models.Geometry.isSizeZero(footer.frame.size)) {
+                        layoutAttributesInRect.push(footer);
                     }
                 }
             }

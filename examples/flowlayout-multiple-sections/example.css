@@ -2,6 +2,18 @@ body {
     margin:0
 }
 
+.suppView {
+    box-sizing:border-box;
+    -moz-box-sizing:border-box;
+    -webkit-box-sizing:border-box;
+    border: 2px solid;
+    position:absolute;
+    top:0;
+    bottom:0;
+    right:0;
+    left:0;
+}
+
 .simpleCell {
     box-sizing:border-box;
     -moz-box-sizing:border-box;

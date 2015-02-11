@@ -3,6 +3,7 @@ var React = rCV.React;
 
 var collectionViewSize = new rCV.Models.Size({height: 500, width:360});
 var cellSize = new rCV.Models.Size({height: 100, width:100});
+var supplementaryHeight = 60;
 
 //Data
 var datasource = [];
@@ -27,6 +28,8 @@ function SimpleCellFactory(data) {
         "highlighted": false,
         "selected": false,
         "prepareForReuse": function () {
+            _style = null;
+            _data = null;
         },
         "applyLayoutAttributes": function (attributes) {
             _style = {
@@ -53,6 +56,44 @@ function SimpleCellFactory(data) {
     return SimpleCell;
 }
 
+
+//Create your cell style
+function SupplementaryViewFactory(kind, indexPath) {
+    var _style = {};
+    var _indexPath = indexPath;
+    var _kind = kind;
+    var reusableView = new rCV.CollectionViewCell.Protocol({
+        "reuseIdentifier": "supplementary",
+        "highlighted": false,
+        "selected": false,
+        "prepareForReuse": function () {
+            _style = null;
+        },
+        "applyLayoutAttributes": function (attributes) {
+            _style = {
+                position: "absolute",
+                top: attributes.frame.origin.y,
+                left: attributes.frame.origin.x,
+                height:attributes.frame.size.height,
+                width: attributes.frame.size.width
+            };
+
+        },
+        "getContentView": function () {
+            var cellStyle = {
+                "text-align": "center",
+                "margin-top": supplementaryHeight/2 - 8
+            };
+
+            var Data = React.createElement('div', {style: cellStyle}, _kind + ": " + _indexPath.section);
+            var View = React.createElement('div', {className: "suppView", style: _style}, Data);
+            return View;
+        }
+    });
+
+    return reusableView;
+}
+
 var datasourceDelegate = new rCV.CollectionViewDatasource.Protocol({
     numberItemsInSection: function(indexPath) {
         return datasource[indexPath.section].length;
@@ -63,6 +104,9 @@ var datasourceDelegate = new rCV.CollectionViewDatasource.Protocol({
     cellForItemAtIndexPath: function(indexPath) {
         var cell = new SimpleCellFactory(datasource[indexPath.section][indexPath.row]);
         return cell;
+    }, viewForSupplementaryElementOfKind: function(kind, indexPath) {
+        var view = SupplementaryViewFactory(kind, indexPath);
+        return view;
     }
 });
 
