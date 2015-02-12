@@ -11,6 +11,8 @@
 * Horizontal Flowlayout using random images from the web.  The scroll viewport matches the image size. 
   * todo - snap to current index path after user stops scrolling
   * todo - add swiping (might do this as native cordova plugin)
+* Vertical Flowlayout (BIG data) with 1,000,000 data items.  Fits browser width/height and scrolls forever.  Good luck getting to the bottom (phantomjs cheat anyone)
+  * todo - add transitions 
 * Custom circle layout based off the WWDC implementation in 2012.  
   * todo - add transitions 
 
