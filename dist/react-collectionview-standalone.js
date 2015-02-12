@@ -21631,7 +21631,9 @@ var props = t.struct({
     collectionViewDelegate: CollectionViewDelegate.Protocol,
     collectionViewLayout: CollectionViewLayout.Protocol,
     scrollViewDelegate: t.maybe(ScrollViewDelegate.Protocol),
-    preloadPageCount: t.maybe(t.Num)
+    preloadPageCount: t.maybe(t.Num),
+    invalidateLayout: t.maybe(t.Bool),
+    resetScroll: t.maybe(t.Bool)
 }, 'CollectionViewProps');
 
 var scrollInterval = 150;
@@ -21707,21 +21709,38 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
         var shouldUpdate = false;
         if (nextProps && nextProps.invalidateLayout && nextProps.collectionViewLayout) {
             shouldUpdate = true;
+            nextProps.invalidateLayout = false; //Important or welcome to infinite drive
+
             var self = this;
             console.log('preparingLayout');
             nextProps.collectionViewLayout.prepareLayout.call(this, function (success) {
-                nextProps.invalidateLayout = false;
-                self.refs.scrollable.getDOMNode().scrollTop = 0;
-                self.refs.scrollable.getDOMNode().scrollLeft = 0;
-                var newRect = self.getRectForScrollPosition(Models.Geometry.getPointZero());
+                var scrollPostion = self.state.scrollPosition;
+
+                var resetScroll = nextProps.resetScroll;
+                if(resetScroll) {
+                    self.refs.scrollable.getDOMNode().scrollTop = 0;
+                    self.refs.scrollable.getDOMNode().scrollLeft = 0;
+                    scrollPostion = Models.Geometry.getPointZero();
+                    nextProps.resetScroll = false;
+                }
+                var newRect = self.getRectForScrollPosition(scrollPostion);
                 var layoutAttributes = nextProps.collectionViewLayout.layoutAttributesForElementsInRect(newRect);
                 var collectionViewContentSize = nextProps.collectionViewLayout.getCollectionViewContentSize(null);
-                self.setState({
-                    scrollPosition: Models.Geometry.getPointZero(),
-                    currentLoadedRect: newRect,
-                    layoutAttributes: layoutAttributes,
-                    collectionViewContentSize: collectionViewContentSize
-                });
+
+                if(resetScroll) {
+                    self.setState({
+                        scrollPosition: scrollPostion,
+                        currentLoadedRect: newRect,
+                        layoutAttributes: layoutAttributes,
+                        collectionViewContentSize: collectionViewContentSize
+                    });
+                } else { //don't set the scrollPosition if not reseting as might not be valid anymore
+                    self.setState({
+                        currentLoadedRect: newRect,
+                        layoutAttributes: layoutAttributes,
+                        collectionViewContentSize: collectionViewContentSize
+                    });
+                }
                 self.forceUpdate();
                 console.log('prepareLayout completed');
             });

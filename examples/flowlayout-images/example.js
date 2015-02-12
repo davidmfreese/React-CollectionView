@@ -153,7 +153,8 @@ function reload(invalidate) {
         frame: frame,
         collectionViewDelegate: collectionViewDelegate,
         collectionViewLayout: flowLayout,
-        invalidateLayout: invalidate
+        invalidateLayout: invalidate,
+        resetScroll: invalidate
     };
 
     flowLayout.prepareLayout();

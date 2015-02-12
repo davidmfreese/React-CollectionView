@@ -101,9 +101,7 @@ var flowLayoutOptions = {
     minimumInteritemSpacing: 0,
     itemSize: itemSize
 };
-
 var flowLayout = rCV.CollectionViewFlowLayout.Layout(layoutDelegate, flowLayoutOptions);
-
 
 var frame = new rCV.Models.Rect({
     origin: new rCV.Models.Point({x:0, y:0}),
