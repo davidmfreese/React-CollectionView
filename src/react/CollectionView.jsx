@@ -92,7 +92,7 @@ var CollectionView = React.createClass({
 
         var shouldUpdate = false;
         if (nextProps && nextProps.invalidateLayout && nextProps.collectionViewLayout) {
-            shouldUpdate = false;
+            shouldUpdate = true;
             var self = this;
             console.log('preparingLayout');
             nextProps.collectionViewLayout.prepareLayout.call(this, function (success) {
@@ -108,6 +108,7 @@ var CollectionView = React.createClass({
                     layoutAttributes: layoutAttributes,
                     collectionViewContentSize: collectionViewContentSize
                 });
+                self.forceUpdate();
                 console.log('prepareLayout completed');
             });
         } else if(nextProps && nextProps.forceUpdate) {
