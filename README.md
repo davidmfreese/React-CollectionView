@@ -8,8 +8,9 @@
 * Vertical Flowlayout using Infinity loading
 * Vertical Flowlayout with new items inserted at top when view is scrolled to top
 * Vertical Flowlayout using random images from the web.  Resizing the browser will invalidate layout, adjust cell sizes and reset scroll to top
-* Vertical Flowlayout using random images from the web.  The scroll viewport matches the image size.  
+* Horizontal Flowlayout using random images from the web.  The scroll viewport matches the image size. 
   * todo - snap to current index path after user stops scrolling
+  * todo - add swiping (might do this as native cordova plugin)
 * Custom circle layout based off the WWDC implementation in 2012.  
   * todo - add transitions 
 
