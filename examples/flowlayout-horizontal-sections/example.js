@@ -1,9 +1,8 @@
 var rCV = ReactCollectionView;
 var React = rCV.React;
 
-var collectionViewSize = new rCV.Models.Size({height: 500, width:360});
+var collectionViewSize = new rCV.Models.Size({height: 360, width:500});
 var cellSize = new rCV.Models.Size({height: 100, width:100});
-var supplementaryHeight = 60;
 
 //Data
 var datasource = [];
@@ -28,8 +27,6 @@ function SimpleCellFactory(data) {
         "highlighted": false,
         "selected": false,
         "prepareForReuse": function () {
-            _style = null;
-            _data = null;
         },
         "applyLayoutAttributes": function (attributes) {
             _style = {
@@ -46,16 +43,17 @@ function SimpleCellFactory(data) {
                 "margin-top": cellSize.height/2 - 10
             };
             var Data = React.createElement('div', {style: cellStyle}, _data);
-            return React.createElement('div', {className:"simpleCell", style: _style}, Data);
+            var Border = React.createElement('div', {className:"simpleCell"}, Data);
+            return React.createElement('div', { style: _style}, Border);
         },
         "setData": function (data) {
             _data = data;
         }
+
     });
 
     return SimpleCell;
 }
-
 
 //Create your cell style
 function SupplementaryViewFactory(kind, indexPath) {
@@ -82,7 +80,13 @@ function SupplementaryViewFactory(kind, indexPath) {
         "getContentView": function () {
             var cellStyle = {
                 "text-align": "center",
-                "margin-top": supplementaryHeight/2 - 8
+                "-webkit-transform": "rotate(-90deg)",
+                "-moz-transform": "rotate(-90deg)",
+                "-ms-transform": "rotate(-90deg)",
+                "-o-transform": "rotate(-90deg)",
+                "filter": "progid:DXImageTransform.Microsoft.BasicImage(rotation=3)",
+                "margin-top": collectionViewSize.height/2 - 10,
+                "margin-right": 10
             };
 
             var Data = React.createElement('div', {style: cellStyle}, _kind + ": " + (_indexPath.section + 1));
@@ -110,6 +114,8 @@ var datasourceDelegate = new rCV.CollectionViewDatasource.Protocol({
     }
 });
 
+var itemSize = new rCV.Models.Size({height:120, width:120});
+var insets = new rCV.Models.EdgeInsets({top:10, left:10, bottom:10, right:10});
 var layoutDelegate = new rCV.CollectionViewLayoutDelegate.Protocol({
     numberItemsInSection: function(indexPath) {
         return datasource[indexPath.section].length;
@@ -142,27 +148,28 @@ var collectionViewDelegate = new rCV.CollectionViewDelegate.Protocol({
 });
 
 var flowLayoutOptions = {
-    flowDirection: "ScrollDirectionTypeVertical",
+    flowDirection: "ScrollDirectionTypeHorizontal",
     width: collectionViewSize.width,
-    height: 0,
-    minimumLineSpacing: 5,
-    minimumInteritemSpacing: 5,
-    itemSize: new rCV.Models.Size({height:100, width:100}),
-    sectionInsets: new rCV.Models.EdgeInsets({top:10, left:0, bottom:10, right:0}),
-    headerReferenceSize: new rCV.Models.Size({height: 60, width: collectionViewSize.width}),
-    footerReferenceSize: new rCV.Models.Size({height: 60, width: collectionViewSize.width})
+    height: collectionViewSize.height,
+    minimumLineSpacing: 0,
+    minimumInteritemSpacing: 0,
+    itemSize: itemSize,
+    sectionInsets: new rCV.Models.EdgeInsets({top:0, left:0, bottom:0, right:0}),
+    headerReferenceSize: new rCV.Models.Size({height: collectionViewSize.height, width: 60}),
+    footerReferenceSize: new rCV.Models.Size({height: collectionViewSize.height, width: 60})
 };
-var flowLayout = rCV.CollectionViewFlowLayout.Layout(layoutDelegate, flowLayoutOptions);
 
+var flowLayout = rCV.CollectionViewFlowLayout.Layout(layoutDelegate, flowLayoutOptions);
 var frame = new rCV.Models.Rect({
     origin: new rCV.Models.Point({x:0, y:0}),
-    size: new rCV.Models.Size({height:500, width:collectionViewSize.width})
+    size: collectionViewSize
 });
 var props = {
     collectionViewDatasource: datasourceDelegate,
     frame: frame,
     collectionViewDelegate: collectionViewDelegate,
-    collectionViewLayout: flowLayout
+    collectionViewLayout: flowLayout,
+    preloadPageCount: 2
 };
 
 var collectionView = React.createElement(rCV.CollectionView.View, props);

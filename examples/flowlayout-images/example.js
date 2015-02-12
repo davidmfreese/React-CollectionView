@@ -1,40 +1,47 @@
 var rCV = ReactCollectionView;
 var React = rCV.React;
 
-var collectionViewSize = new rCV.Models.Size({height: 500, width:360});
-var cellSize = new rCV.Models.Size({height: 100, width:100});
+function throttle() {
+    clearTimeout(reload.timeoutInterval );
+    reload.timeoutInterval = setTimeout(function(){
+        reload(true);
+    }, 150);
+}
+
+window.onresize = function() {
+    throttle();
+}
 
 //Data
-var allData = [];
+var datasource = [];
 for(var i = 1; i <= 10000; i++) {
-    allData.push("Item: " + i);
+    datasource.push("Item: " + i);
 }
 
-var datasource = allData.slice(0, 99);
+var _images =[];
+_images.push("http://icons.iconarchive.com/icons/yellowicon/game-stars/256/Mario-icon.png");
+_images.push("http://icons.iconarchive.com/icons/ph03nyx/super-mario/256/Racoon-Mario-icon.png");
+_images.push("http://www.mitchelaneous.com/wp-content/uploads/2009/11/marioyoshi1.png");
+_images.push("http://icons.iconarchive.com/icons/ph03nyx/super-mario/256/Shell-Red-icon.png");
+_images.push("http://png-4.findicons.com/files/icons/2297/super_mario/256/question_coin.png");
+_images.push("http://files.igameu.com/app/921/2926516a43178d76ecee2547ae94236a-256.png");
+_images.push("http://files.igameu.com/app/921/2926516a43178d76ecee2547ae94236a-256.png");
+var _imagesIndex = 0;
 
-var loadMoreInterval = null;
-function loadMoreData(batchSize){
-    if(loadMoreInterval) {
-        return;
+var imageForCells = [];
+for(var i = 0; i < datasource.length; i++) {
+    if(_imagesIndex >= _images.length) {
+        _imagesIndex = 0;
     }
-    loadMoreInterval = setInterval(function(){
-        var currentIndex = datasource.length;
-        currentIndex++;
-        var end = currentIndex + batchSize;
-        for(var i = currentIndex; i < end && i < allData.length; i++) {
-            datasource.push(allData[i]);
-        }
-
-        clearInterval(loadMoreInterval);
-        loadMoreInterval = null;
-        invalidateLayout();
-    }, 1000);
+    imageForCells.push(_images[_imagesIndex]);
+    _imagesIndex++;
 }
-
 //Create your cell style
-function SimpleCellFactory(data) {
+function SimpleCellFactory(data, indexPath) {
+    var _indexPath = indexPath;
     var _data = data;
     var _style = {};
+
     var SimpleCell = new rCV.CollectionViewCell.Protocol({
         "reuseIdentifier": "default",
         "highlighted": false,
@@ -51,12 +58,19 @@ function SimpleCellFactory(data) {
             };
         },
         "getContentView": function () {
-            var cellStyle = {
-                "text-align": "center",
-                "margin-top": cellSize.height/2 - 10
-            };
-            var Data = React.createElement('div', {style: cellStyle}, _data);
-            return React.createElement('div', {className:"simpleCell", style: _style}, Data);
+
+            var Img = React.createElement('img',
+                {
+                    src: imageForCells[_indexPath.row],
+                    style:{width:"100%"}
+                });
+
+            return React.createElement('div',
+                {
+                    style: _style,
+                    key: "section:" + _indexPath.section + ";row" + _indexPath.row,
+                }, Img);
+
         },
         "setData": function (data) {
             _data = data;
@@ -67,15 +81,15 @@ function SimpleCellFactory(data) {
     return SimpleCell;
 }
 
-var itemSize = new rCV.Models.Size({height:100, width:100});
-var insets = new rCV.Models.EdgeInsets({top:10, left:10, bottom:10, right:10});
+function reload(invalidate) {
+    var windowWidth = window.innerWidth;
+    var numberOfRows = 6;
+    var width = Math.floor(windowWidth/6);
 
-var frame = new rCV.Models.Rect({
-    origin: new rCV.Models.Point({x:0, y:0}),
-    size: new rCV.Models.Size({height:500, width:collectionViewSize.width})
-});
+    var collectionViewSize = new rCV.Models.Size({height: window.innerHeight, width: windowWidth});
+    var insets = new rCV.Models.EdgeInsets({top:0, left:0, bottom:0, right:0});
+    var cellSize = new rCV.Models.Size({height: width, width:width});
 
-function getProps() {
     var datasourceDelegate = new rCV.CollectionViewDatasource.Protocol({
         numberItemsInSection: function(indexPath) {
             return datasource.length;
@@ -84,7 +98,7 @@ function getProps() {
             return 1;
         },
         cellForItemAtIndexPath: function(indexPath) {
-            var cell = new SimpleCellFactory(datasource[indexPath.row]);
+            var cell = new SimpleCellFactory(datasource[indexPath.row], indexPath);
             return cell;
         }
     });
@@ -110,20 +124,6 @@ function getProps() {
         }
     });
 
-    var infinityLoadMoreBuffer = collectionViewSize.height/2;
-    var previousScrollPosition = new rCV.Models.Point({x: 0, y: 0});
-    var scrollViewDelegate = new rCV.ScrollViewDelegate.Protocol({
-        "scrollViewDidScroll": function (scrollPosition) {
-            var scrollTop = scrollPosition.y;
-            var bottomOfContent = flowLayout.getCollectionViewContentSize.call(this, null);
-            if (scrollTop > previousScrollPosition.y && scrollTop + infinityLoadMoreBuffer + collectionViewSize.height > bottomOfContent.height) {
-                if (!loadMoreInterval) {
-                    loadMoreData(33);
-                }
-            }
-        }
-    });
-
     var collectionViewDelegate = new rCV.CollectionViewDelegate.Protocol({
         shouldSelectItemAtIndexPath: function (indexPath) { return false; },
         didSelectItemAtIndexPath: function (indexPath) { },
@@ -137,33 +137,32 @@ function getProps() {
     var flowLayoutOptions = {
         flowDirection: "ScrollDirectionTypeVertical",
         width: collectionViewSize.width,
-        height: 0,
-        minimumLineSpacing: 10,
-        minimumInteritemSpacing: 10,
-        itemSize: itemSize
+        height: collectionViewSize.height,
+        minimumLineSpacing: 0,
+        minimumInteritemSpacing: 0,
+        itemSize: cellSize
     };
-    var flowLayout = rCV.CollectionViewFlowLayout.Layout(layoutDelegate, flowLayoutOptions);
+    var flowLayout = new rCV.CollectionViewFlowLayout.Layout(layoutDelegate, flowLayoutOptions);
 
+    var frame = new rCV.Models.Rect({
+        origin: new rCV.Models.Point({x: 0, y: 0}),
+        size: new rCV.Models.Size({height: collectionViewSize.height, width: collectionViewSize.width})
+    });
     var props = {
         collectionViewDatasource: datasourceDelegate,
+        frame: frame,
         collectionViewDelegate: collectionViewDelegate,
         collectionViewLayout: flowLayout,
-        scrollViewDelegate: scrollViewDelegate,
-        flowLayout: flowLayout,
-        frame: frame
+        invalidateLayout: invalidate
     };
 
-    return props;
-}
+    flowLayout.prepareLayout();
 
-var initialProps = getProps();
-var collectionView = React.createElement(rCV.CollectionView.View, initialProps);
-React.render(collectionView, document.getElementById('reactContainer'));
+    var collectionView = React.createElement(rCV.CollectionView.View, props);
 
-function invalidateLayout() {
-    var newProps = getProps();
-    newProps.invalidateLayout = true;
-    collectionView = React.createElement(rCV.CollectionView.View, newProps);
     React.render(collectionView, document.getElementById('reactContainer'));
 }
 
+reload.timeoutInterval = null;
+
+reload();

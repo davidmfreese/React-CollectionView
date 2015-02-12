@@ -21630,7 +21630,8 @@ var props = t.struct({
     frame: Models.Rect,
     collectionViewDelegate: CollectionViewDelegate.Protocol,
     collectionViewLayout: CollectionViewLayout.Protocol,
-    scrollViewDelegate: t.maybe(ScrollViewDelegate.Protocol)
+    scrollViewDelegate: t.maybe(ScrollViewDelegate.Protocol),
+    preloadPageCount: t.maybe(t.Num)
 }, 'CollectionViewProps');
 
 var scrollInterval = 150;
@@ -21640,7 +21641,7 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
     propTypes: tReact.react.toPropTypes(props),
     getInitialState: function() {
         return {
-            scrollTop: 0,
+            scrollPosition: Models.Geometry.getPointZero(),
             collectionViewContentSize: Models.Geometry.getSizeZero(),
             scrollTimeout: undefined,
             isScrolling: false,
@@ -21665,50 +21666,84 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
             console.log('isTypeSafe<-->ScrollViewDelegate: ' + ScrollViewDelegate.Protocol.is(this.props.scrollViewDelegate));
         }
 
-        this.props.collectionViewLayout.prepareLayout.call(this, null);
-        var contentSize = this.props.collectionViewLayout.getCollectionViewContentSize.call(this, null);
-        if (contentSize && contentSize.height && contentSize.width) {
-
-        } else {
-            contentSize = Models.Geometry.getSizeZero();
-        }
-
         var defaultBlockSize = this.props.frame.size;
-        var currentLoadedRect = this.getRectForScrollTop(0, defaultBlockSize);
+        var currentLoadedRect = this.getRectForScrollPosition(Models.Geometry.getPointZero(), defaultBlockSize);
         var layoutAttributes = this.props.collectionViewLayout.layoutAttributesForElementsInRect(currentLoadedRect);
-        this.setState({collectionViewContentSize: contentSize,
-            currentLoadedRect: currentLoadedRect,
-            defaultBlockSize: defaultBlockSize,
-            scrollTop: 0,
-            currentLoadedRect: currentLoadedRect,
-            layoutAttributes: layoutAttributes});
+
+        var self = this;
+        console.log('preparingLayout');
+        this.props.collectionViewLayout.prepareLayout.call(this, function(success) {
+            var contentSize = self.props.collectionViewLayout.getCollectionViewContentSize.call(self, null);
+            if (contentSize && contentSize.height && contentSize.width) {
+
+            } else {
+                contentSize = Models.Geometry.getSizeZero();
+            }
+
+            self.setState({collectionViewContentSize: contentSize,
+                currentLoadedRect: currentLoadedRect,
+                defaultBlockSize: defaultBlockSize,
+                currentLoadedRect: currentLoadedRect,
+                layoutAttributes: layoutAttributes,
+                scrollPosition: Models.Geometry.getPointZero(),
+                collectionViewContentSize: contentSize});
+            self.setStateFromScrollPosition(Models.Geometry.getPointZero(), true);
+            console.log('prepareLayout completed');
+        });
     },
     shouldComponentUpdate: function(nextProps, nextState) {
-        var newScrollTop = nextState.scrollTop;
+        var newScrollPosition = nextState.scrollPosition;
+        var oldScrollPosition = this.state.scrollPosition;
         var newLayouts = nextState.layoutAttributes;
-        var currentScrollTop = this.state.scrollTop;
-        var currentLoadedRect = this.state.currentLoadedRect;
         var oldLayouts = this.state.layoutAttributes;
-        var isScrollUp = newScrollTop < currentScrollTop;
+        var newLoadedRect = nextState.currentLoadedRect;
+        var oldLoadedRect = this.state.currentLoadedRect;
+        var oldContentSize = this.state.collectionViewContentSize;
+        var newContentSize = nextState.collectionViewContentSize;
+        var oldIsScrolling = this.state.isScrolling;
+        var newIsScrolling = nextState.isScrolling;
         var frame = this.props.frame;
-        var threshold = Math.max(frame.size.height);
 
         var shouldUpdate = false;
-        if(nextProps && nextProps.invalidateLayout) {
+        if (nextProps && nextProps.invalidateLayout && nextProps.collectionViewLayout) {
+            shouldUpdate = false;
+            var self = this;
+            console.log('preparingLayout');
+            nextProps.collectionViewLayout.prepareLayout.call(this, function (success) {
+                nextProps.invalidateLayout = false;
+                self.refs.scrollable.getDOMNode().scrollTop = 0;
+                self.refs.scrollable.getDOMNode().scrollLeft = 0;
+                var newRect = self.getRectForScrollPosition(Models.Geometry.getPointZero());
+                var layoutAttributes = nextProps.collectionViewLayout.layoutAttributesForElementsInRect(newRect);
+                var collectionViewContentSize = nextProps.collectionViewLayout.getCollectionViewContentSize(null);
+                self.setState({
+                    scrollPosition: Models.Geometry.getPointZero(),
+                    currentLoadedRect: newRect,
+                    layoutAttributes: layoutAttributes,
+                    collectionViewContentSize: collectionViewContentSize
+                });
+                console.log('prepareLayout completed');
+            });
+        } else if(nextProps && nextProps.forceUpdate) {
             shouldUpdate = true;
-            nextProps.collectionViewLayout.prepareLayout.call(this, null);
-        } else if(oldLayouts == null || oldLayouts.length != newLayouts.length) {
+        }else if (oldLayouts == null && newLayouts != null) {
             shouldUpdate = true;
-        } else if(!currentLoadedRect || !currentLoadedRect.size) {
+        } else if (Models.Geometry.isSizeZero(oldContentSize) || oldContentSize.width != newContentSize.width || oldContentSize.height != newContentSize.height) {
             shouldUpdate = true;
-        } else if(!isScrollUp && newScrollTop > currentLoadedRect.origin.y + currentLoadedRect.size.height - threshold ) {
+        } else if(newLayouts && newLayouts.length != oldLayouts.length) {
             shouldUpdate = true;
-        } else if(isScrollUp && newScrollTop < currentLoadedRect.origin.y + frame.size.height + threshold) {
+        } else if (!oldLoadedRect || !oldLoadedRect.size) {
             shouldUpdate = true;
+        } else if (oldLoadedRect.origin.x != newLoadedRect.origin.x) {
+            shouldUpdate = true;
+        } else if(oldLoadedRect.origin.y != newLoadedRect.origin.y) {
+            shouldUpdate = true;
+        } else if(oldIsScrolling && !newIsScrolling) {
+            //shouldUpdate = true;
         }
 
         if(debugScroll) {
-            console.log('new scrollTop: ' + newScrollTop + ", old scrollTop: " + currentScrollTop);
+            console.log('new scrollPosition: ' + JSON.stringify(newScrollPosition, null) + ", old scrollPosition: " + JSON.stringify(oldScrollPosition, null));
             console.log('will update: ' + shouldUpdate);
         }
         return shouldUpdate;
@@ -21722,7 +21757,7 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
         for(var i = 0; i < layoutAttributes.length; i++) {
             var attributes = layoutAttributes[i];
             var category = attributes.representedElementCategory.call(this, null);
-            console.log(category);
+            //console.log(category);
             if(category == "CollectionElementTypeSupplementaryView") {
                 var kind = attributes.representedElementKind.call(this, null);
                 var view = this.props.collectionViewDatasource.viewForSupplementaryElementOfKind.call(this, kind, attributes.indexPath);
@@ -21744,7 +21779,7 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
         var scrollableStyle = {
             height: frame.size.height,
             width: frame.size.width,
-            overflowX: 'hidden',
+            overflowX: 'scroll',
             overflowY: 'scroll',
             position: 'absolute'
         };
@@ -21758,7 +21793,7 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
             contentSize = new Models.Size({height:0, width:0});
         }
         var wrapperStyle = {
-            width:frame.size.width,
+            width:contentSize.width,
             height:contentSize.height
         };
 
@@ -21773,48 +21808,51 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
         )
         )
     },
-    getRectForScrollTop: function(scrollTop, overrideDefaultBlockSize) {
+    getRectForScrollPosition: function(scrollPosition, overrideDefaultBlockSize) {
         var defaultBlockSize = overrideDefaultBlockSize;
         if(!defaultBlockSize) {
             defaultBlockSize = this.state.defaultBlockSize;
         }
 
-        var currentY = scrollTop - defaultBlockSize.height;
-        var currentX = 0;
-        var currentBottom = currentY + defaultBlockSize.height*3;
+        var preloadPageCount = this.props.preloadPageCount;
+        if(!preloadPageCount) {
+            preloadPageCount = 2; //per direction
+        }
 
+        var currentY = scrollPosition.y - defaultBlockSize.height*preloadPageCount;
+        var currentBottom = scrollPosition.y + defaultBlockSize.height*(preloadPageCount + 1);
         if(currentY < 0) {
             currentY = 0;
         }
         var height = Math.max(currentBottom - currentY, 0);
 
+        var currentX = scrollPosition.x - defaultBlockSize.width*preloadPageCount;
+        var currentRight = scrollPosition.x + defaultBlockSize.width*(preloadPageCount + 1);
+        if(currentX < 0) {
+            currentX = 0;
+        }
+        var width = Math.max(currentRight - currentX, 0);
+
         var rect = new Models.Rect({
             origin: new Models.Point({x: currentX, y: currentY}),
-            size: new Models.Size({width: defaultBlockSize.width, height: height})
+            size: new Models.Size({width: width, height: height})
         });
 
         return rect;
     },
     onScroll: function(e) {
-        var scrollBottom = this.state.collectionViewContentSize.height;
-
-        var scrollTop = e.target.scrollTop;
+        var scrollPosition = new Models.Point({x: e.target.scrollLeft, y: e.target.scrollTop});
         if(this.props.scrollViewDelegate != null && this.props.scrollViewDelegate.scrollViewDidScroll != null) {
-            var previousScrollTop = this.state.scrollTop;
-            var scrollDirection = "ScrollDirectionTypeVerticalUp";
-            if(previousScrollTop < scrollTop) {
-                scrollDirection = "ScrollDirectionTypeVerticalDown";
-            }
-            this.props.scrollViewDelegate.scrollViewDidScroll(scrollDirection, scrollTop, scrollBottom);
+            this.props.scrollViewDelegate.scrollViewDidScroll(scrollPosition);
         }
-        this.handleScroll(scrollTop);
+        this.handleScroll(scrollPosition);
     },
-    handleScroll: function(scrollTop) {
+    handleScroll: function(scrollPosition) {
         var that = this;
         this.manageScrollTimeouts();
-        this.setStateFromScrollTop(scrollTop);
+        this.setStateFromScrollPosition(scrollPosition);
     },
-    nearBottom: function(scrollTop) {
+    nearBottom: function(scrollPosition) {
         //This will be implemented to check if near bottom (and signal load more if necessary)
     },
     manageScrollTimeouts: function() {
@@ -21824,6 +21862,7 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
 
         var that = this,
             scrollTimeout = setTimeout(function() {
+                //that.setStateFromScrollPosition(that.state.scrollPosition, true);
                 that.setState({
                     isScrolling: false,
                     scrollTimeout: undefined
@@ -21835,13 +21874,59 @@ var CollectionView = React.createClass({displayName: 'CollectionView',
             scrollTimeout: scrollTimeout
         });
     },
-    setStateFromScrollTop: function(scrollTop) {
-        var currentLoadedRect = this.getRectForScrollTop(scrollTop);
-        var layoutAttributes = this.props.collectionViewLayout.layoutAttributesForElementsInRect(currentLoadedRect);
+    setStateFromScrollPosition: function(scrollPosition, force) {
+        var newRect = this.getRectForScrollPosition(scrollPosition);
+        var currentLoadedRect = this.state.currentLoadedRect;
+        var oldScrollPosition = this.state.scrollPosition;
+        var frame = this.props.frame;
+        var preloadPageCount = this.props.preloadPageCount;
+        if(!preloadPageCount) {
+            preloadPageCount = 2; //per direction
+        }
+
+        var isScrollUp = scrollPosition.y < oldScrollPosition.y;
+        var isScrollDown = scrollPosition.y > oldScrollPosition.y;
+        var isScrollLeft = scrollPosition.x < oldScrollPosition.x;
+        var isScrollRight = scrollPosition.x > oldScrollPosition.x;
+        var scrollUpThreshold = currentLoadedRect.origin.y + frame.size.height*preloadPageCount;
+        var scrollDownThreshold = currentLoadedRect.origin.y + currentLoadedRect.size.height - frame.size.height*preloadPageCount;
+        var scrollLeftThreshold = currentLoadedRect.origin.x + frame.size.width;
+        var scrollRightThreshold = currentLoadedRect.origin.x + currentLoadedRect.size.width - frame.size.width*preloadPageCount;
+
+        var redraw = false;
+        if(isScrollUp && scrollPosition.y < scrollUpThreshold) {
+            redraw = true;
+        } else if(isScrollDown && scrollPosition.y > scrollDownThreshold) {
+            redraw = true;
+        } else if(isScrollLeft && scrollPosition.x < scrollLeftThreshold) {
+            redraw = true;
+        } else if(isScrollRight && scrollPosition.x > scrollRightThreshold) {
+            redraw = true;
+        }
+
+        if(redraw || force) {
+            var layoutAttributes = this.props.collectionViewLayout.layoutAttributesForElementsInRect(newRect);
+            var collectionViewContentSize = this.props.collectionViewLayout.getCollectionViewContentSize(null);
+            this.setState({
+                scrollPosition: scrollPosition,
+                currentLoadedRect: newRect,
+                layoutAttributes: layoutAttributes,
+                collectionViewContentSize: collectionViewContentSize
+            });
+        } else { //just update scroll position
+            this.setState({
+                scrollPosition: scrollPosition
+            });
+        }
+    },
+    setStateForRect: function(rect) {
+        var newRect = rect
+        var layoutAttributes = this.props.collectionViewLayout.layoutAttributesForElementsInRect(rect);
+        var collectionViewContentSize = this.props.collectionViewLayout.getCollectionViewContentSize(null);
         this.setState({
-            scrollTop: scrollTop,
-            currentLoadedRect: currentLoadedRect,
-            layoutAttributes: layoutAttributes
+            currentLoadedRect: newRect,
+            layoutAttributes: layoutAttributes,
+            collectionViewContentSize: collectionViewContentSize
         });
     }
 });
@@ -21920,8 +22005,8 @@ LayoutModel.ArrayOfLayoutAttributes = t.list(CollectionViewLayoutAttributes.Prot
 
 var CollectionViewLayoutProtocol = t.struct({
     "layoutDelegate": CollectionViewLayoutDelegate.Protocol,
-    "getCollectionViewContentSize": t.func(t.Nil, Models.Size),
-    "prepareLayout": t.func(t.Nil, t.Nil),
+    "getCollectionViewContentSize": t.func(t.Any, Models.Size),
+    "prepareLayout": t.func(t.Any, t.Nil),//func is callback
     "layoutAttributesForElementsInRect":t.func(Models.Rect, LayoutModel.ArrayOfLayoutAttributes),
     "layoutAttributesForItemAtIndexPath":t.func(Models.IndexPath, CollectionViewLayoutAttributes.Protocol),
     "prepareForCollectionViewUpdates": t.func(t.Nil, t.Any),
@@ -21979,7 +22064,7 @@ var t = require('tcomb');
 var Models = require('../../Model/Models');
 var Enums = require('../../Enums/Enums');
 var FlowLayoutOptions = require('./FlowLayoutOptions');
-//var HorizontalFlowLayout = require('./HorizontalFlowLayout');
+var HorizontalFlowLayout = require('./HorizontalFlowLayout');
 var VerticalFlowLayout = require('./VerticalFlowLayout');
 var CollectionViewDatasource = require('./../CollectionViewLayout');
 var CollectionViewLayout = require('./../CollectionViewLayout');
@@ -22001,15 +22086,15 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
             _constrainedHeightOrWidth = sanitizedOpts.height;
         }
     };
-
     setConstrainedHeightOrWidth();
 
     var prepareLayout = function() {
+        _sectionLayoutDetails = [];
+        _totalContentSize = Models.Geometry.getSizeZero();
+        setConstrainedHeightOrWidth();
+
+        var numberOfSections = layoutDelegate.numberOfSectionsInCollectionView.call(this, null);
         if(sanitizedOpts.flowDirection == "ScrollDirectionTypeVertical") {
-            _sectionLayoutDetails = [];
-            _totalContentSize = Models.Geometry.getSizeZero();
-            setConstrainedHeightOrWidth();
-            var numberOfSections = layoutDelegate.numberOfSectionsInCollectionView.call(this, null);
             var totalHeight = 0;
             var startY = 0;
             for (var i = 0; i < numberOfSections; i++) {
@@ -22023,8 +22108,21 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
             }
 
             _totalContentSize = new Models.Size({height: totalHeight, width: _constrainedHeightOrWidth});
+
         } else if(opts.flowDirection == "ScrollDirectionTypeHorizontal") {
-            //Coming soon
+            var totalWidth = 0;
+            var startX = 0;
+            for (var i = 0; i < numberOfSections; i++) {
+                var indexPath = new Models.IndexPath({row: 0, section: i});
+                var numberItemsInSection = layoutDelegate.numberItemsInSection(indexPath);
+                var sectionLayoutInfo = HorizontalFlowLayout.CreateLayoutDetailsForSection(indexPath, numberItemsInSection, startX, sanitizedOpts);
+                _sectionLayoutDetails[i] = sectionLayoutInfo;
+                totalWidth += sectionLayoutInfo.Frame.size.width;
+
+                startX += sectionLayoutInfo.Frame.size.width;
+            }
+
+            _totalContentSize = new Models.Size({height: _constrainedHeightOrWidth, width: totalWidth});
         }
     };
 
@@ -22052,8 +22150,11 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
             }
             return _totalContentSize;
         },
-        "prepareLayout": function() {
+        "prepareLayout": function(callback) {
             prepareLayout();
+            if(callback) {
+                callback("success");
+            }
         },
         "layoutAttributesForElementsInRect": function(rect) {
             var layoutAttributesInRect = [];
@@ -22065,6 +22166,10 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
 
                 var sections = VerticalFlowLayout.GetSectionsForRect(rect, _sectionLayoutDetails);
                 var firstSection = _sectionLayoutDetails[sections[0]];
+                if(!firstSection) {
+                    return layoutAttributesInRect;
+                }
+
                 var currentY = firstSection.Frame.origin.y;
                 for (var j = 0; j < sections.length; j++) {
                     var sectionNum = sections[j];
@@ -22104,14 +22209,65 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
                         layoutAttributesInRect.push(footer);
                     }
                 }
+            } else if(opts.flowDirection == "ScrollDirectionTypeHorizontal") {
+
+                var sections = HorizontalFlowLayout.GetSectionsForRect(rect, _sectionLayoutDetails);
+                var firstSection = _sectionLayoutDetails[sections[0]];
+                if(!firstSection) {
+                    return layoutAttributesInRect;
+                }
+
+                var currentX = firstSection.Frame.origin.x;
+                for (var j = 0; j < sections.length; j++) {
+                    var sectionNum = sections[j];
+                    var indexPath = new Models.IndexPath({row: 0, section: sectionNum});
+                    var numberItemsInSection = this.layoutDelegate.numberItemsInSection(indexPath);
+                    var currentSection = _sectionLayoutDetails[sectionNum];
+                    if (currentSection.Frame.origin.x > rect.origin.x + rect.size.width) {
+                        break;
+                    }
+
+                    var header = HorizontalFlowLayout.LayoutAttributesForSupplementaryView(indexPath, _sectionLayoutDetails[indexPath.section], "header");
+                    if(header && !Models.Geometry.isSizeZero(header.frame.size)) {
+                        layoutAttributesInRect.push(header);
+                    }
+
+                    var startRow = currentSection.getEstimatedColumnForPoint(rect.origin);
+                    var startIndex = currentSection.getStartingIndexForColumn(startRow);
+
+                    for (var i = startIndex; i < numberItemsInSection; i++) {
+                        var indexPath = new Models.IndexPath({row: i, section: sectionNum});
+                        var layoutAttributes = this.layoutAttributesForItemAtIndexPath(indexPath);
+                        if (layoutAttributes.frame.origin.x + layoutAttributes.size.height < rect.origin.x) {
+                            continue;
+                        }
+                        if (layoutAttributes.frame.origin.x > rect.origin.x + rect.size.width) {
+                            break;
+                        }
+                        if (Models.Geometry.rectIntersects(layoutAttributes.frame, rect)) {
+                            layoutAttributesInRect.push(layoutAttributes);
+                        } else {
+                            //console.log("no intersection");
+                        }
+                    }
+
+                    var footer = HorizontalFlowLayout.LayoutAttributesForSupplementaryView(indexPath, _sectionLayoutDetails[indexPath.section], "footer");
+                    if(footer && !Models.Geometry.isSizeZero(footer.frame.size)) {
+                        layoutAttributesInRect.push(footer);
+                    }
+                }
             }
+
 
             return new CollectionViewLayout.Model.ArrayOfLayoutAttributes(layoutAttributesInRect);
         },
         "layoutAttributesForItemAtIndexPath": function(indexPath) {
 
-            if((opts.flowDirection == "ScrollDirectionTypeVertical")) {
+            if(opts.flowDirection == "ScrollDirectionTypeVertical") {
                 var attributes = VerticalFlowLayout.LayoutAttributesForItemAtIndexPath(indexPath, _sectionLayoutDetails[indexPath.section], sanitizedOpts.itemSize);
+                return attributes;
+            } else if(opts.flowDirection == "ScrollDirectionTypeHorizontal") {
+                var attributes = HorizontalFlowLayout.LayoutAttributesForItemAtIndexPath(indexPath, _sectionLayoutDetails[indexPath.section], sanitizedOpts.itemSize);
                 return attributes;
             }
         },
@@ -22128,7 +22284,7 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
 
 module.exports = CollectionViewFlowLayoutFactory;
 
-},{"../../Enums/Enums":319,"../../Model/Models":332,"./../CollectionViewLayout":321,"./../CollectionViewLayoutAttributes":322,"./../CollectionViewLayoutDelegate":323,"./FlowLayoutOptions":326,"./VerticalFlowLayout":328,"tcomb":313}],326:[function(require,module,exports){
+},{"../../Enums/Enums":319,"../../Model/Models":332,"./../CollectionViewLayout":321,"./../CollectionViewLayoutAttributes":322,"./../CollectionViewLayoutDelegate":323,"./FlowLayoutOptions":326,"./HorizontalFlowLayout":327,"./VerticalFlowLayout":328,"tcomb":313}],326:[function(require,module,exports){
 var t = require('tcomb');
 
 var Models = require('../../Model/Models');
@@ -22158,8 +22314,10 @@ function sanitizeOptions(opts) {
     var _minLineSpacing = 0;
     var _headerReferenceSize = Models.Geometry.getSizeZero();
     var _footerReferenceSize = Models.Geometry.getSizeZero();
+    var _width = opts.width;
+    var _height = opts.height;
 
-    if(opts.flowDirection != "ScrollDirectionTypeVertical" && opts.flowDirection == "ScrollDirectionTypeHorizontal") {
+    if(opts.flowDirection != "ScrollDirectionTypeVertical" && opts.flowDirection != "ScrollDirectionTypeHorizontal") {
         throw "Unsupported flow direction";
     }
     if(!opts.itemSize || Models.Geometry.isSizeZero(opts.itemSize)) {
@@ -22175,6 +22333,7 @@ function sanitizeOptions(opts) {
     }
     if(opts.flowDirection == "ScrollDirectionTypeVertical") {
         _constrainedHeightOrWidth = opts.width;
+
     } else if (opts.flowDirection == "ScrollDirectionTypeHorizontal") {
         _constrainedHeightOrWidth = opts.height;
     }
@@ -22193,8 +22352,8 @@ function sanitizeOptions(opts) {
 
     var sanitizedOptions = new FlowLayoutOptions({
         flowDirection: opts.flowDirection,
-        width: _constrainedHeightOrWidth,
-        height: _constrainedHeightOrWidth,
+        width: _width,
+        height: _height,
         minimumLineSpacing: _minLineSpacing,
         minimumInteritemSpacing: _minInteritemSpacing,
         sectionInsets: _sectionInsets,
@@ -22209,59 +22368,177 @@ function sanitizeOptions(opts) {
 module.exports.SanitizeOptions = sanitizeOptions;
 
 },{"../../Enums/Enums":319,"../../Model/Models":332,"tcomb":313}],327:[function(require,module,exports){
-//
-//var setLayoutForHorizontalSection = function(indexPath) {
-//    if(!_sectionLayoutDetails) {
-//        _sectionLayoutDetails = [];
-//    }
-//
-//    var numberItems = layoutDelegate.numberItemsInSection(indexPath);
-//    var availableHeight = _constrainedHeightOrWidth - _sectionInsets.top - _sectionInsets.right;
-//    var numberOfRows =  Math.floor((availableHeight - _itemSize.height)/(_itemSize.height + _minLineSpacing)) + 1;
-//    var actualInteritemSpacing = Math.floor((availableHeight - _itemSize.width*numberOfRows)/(numberOfRows - 1));
-//    var itemTotalHeight = _itemSize.height;
-//    var columnWidth = _itemSize.width;
-//    var numberOfTotalColumns = Math.ceil(numberItems/numberOfRows);
-//    var totalWidth = numberOfTotalColumns*columnWidth + (numberOfTotalColumns - 1)*_minLineSpacing;
-//    totalWidth += _headerReferenceSize.height + _footerReferenceSize.height;
-//    totalWidth += _sectionInsets.left + _sectionInsets.right;
-//    var sectionSize = Models.Size({width: totalWidth, height: _constrainedHeightOrWidth});
-//
-//    var startX = 0;
-//    var previousSection = indexPath.section - 1;
-//    if(previousSection < 0 ) {
-//        previousSection = 0;
-//    }
-//    if(_sectionLayoutDetails && _sectionLayoutDetails[previousSection]) {
-//        for (var i = 0; i <= indexPath.section - 1; i++) {
-//            startX += _sectionLayoutDetails[i].Frame.size.width;
-//        }
-//    }
-//
-//    var sectionLayout = new VerticalSectionLayoutDetails({
-//        Frame: new Models.Rect({
-//            origin: new Models.Point({x: 0, y: startY}),
-//            size: sectionSize
-//        }),
-//        NumberItems: numberItems,
-//        NumberOfTotalRows: numberOfTotalRows,
-//        ItemTotalWidth: itemTotalWidth,
-//        NumberOfColumns: numberOfColumns,
-//        RowHeight: rowHeight,
-//        ActualInteritemSpacing: actualInteritemSpacing,
-//        MinimumLineSpacing: _minLineSpacing,
-//        SectionInsets: _sectionInsets,
-//        HeaderReferenceSize:_headerReferenceSize,
-//        FooterReferenceSize:_footerReferenceSize
-//
-//    });
-//
-//    _totalContentSize = new Models.Size({ width: _constrainedHeightOrWidth, height: startY + sectionSize.height});
-//    _sectionLayoutDetails[indexPath.section] = sectionLayout;
-//};
+var t = require('tcomb');
 
+var Models = require('../../Model/Models');
+var Enums = require('../../Enums/Enums');
+var CollectionViewLayoutAttributes = require('../../Layout/CollectionViewLayoutAttributes');
 
-},{}],328:[function(require,module,exports){
+var HorizontalSectionLayoutDetails = t.struct({
+    Frame: Models.Rect,
+    NumberItems: t.Num,
+    NumberOfTotalColumns: t.Num,
+    ColumnWidth: t.Num,
+    NumberOfRows: t.Num,
+    MinimumInteritemSpacing: t.Num,
+    ActualLineSpacing: t.Num,
+    RowHeight: t.Num,
+    SectionInsets: Models.EdgeInsets,
+    HeaderReferenceSize: Models.Size,
+    FooterReferenceSize: Models.Size
+}, 'SectionLayoutDetails');
+
+HorizontalSectionLayoutDetails.prototype.getEstimatedColumnForPoint = function (point) {
+    //zero based
+    return Math.max(0, Math.floor((point.x - this.Frame.origin.x + this.ActualLineSpacing) / (this.RowHeight + this.ActualLineSpacing)));
+};
+
+HorizontalSectionLayoutDetails.prototype.getStartingIndexForColumn = function (column) {
+    //zero based
+    return Math.max(0, column * this.NumberOfRows);
+};
+
+HorizontalSectionLayoutDetails.prototype.getColumnForIndex = function (indexPath) {
+    //zero based
+    return Math.floor(indexPath.row / this.NumberOfRows);
+};
+
+function creationSectionLayoutDetails(indexPath, numberItemsInSection, startX, opts) {
+    var _constrainedHeightOrWidth = opts.height;
+
+    var numberItems = numberItemsInSection;
+    var availableHeight = _constrainedHeightOrWidth - opts.sectionInsets.top - opts.sectionInsets.bottom;
+    var numberOfRows = Math.floor((availableHeight - opts.itemSize.height) / (opts.itemSize.height + opts.minimumLineSpacing)) + 1;
+
+    var actualLineSpacing = Math.floor((availableHeight - opts.itemSize.height * numberOfRows) / Math.max(1, (numberOfRows - 1)));
+    var itemTotalWidth = opts.itemSize.width;
+    var rowHeight = opts.itemSize.height;
+    var numberOfTotalColumns = Math.ceil(numberItems / numberOfRows);
+    var totalWidth = numberOfTotalColumns * rowHeight + (numberOfTotalColumns - 1) * opts.minimumInteritemSpacing;
+    totalWidth += opts.headerReferenceSize.width + opts.footerReferenceSize.width;
+    totalWidth += opts.sectionInsets.left + opts.sectionInsets.right;
+    var sectionSize = Models.Size({width: totalWidth, height: _constrainedHeightOrWidth});
+
+    var sectionLayout = new HorizontalSectionLayoutDetails({
+        Frame: new Models.Rect({
+            origin: new Models.Point({x: startX, y: 0}),
+            size: sectionSize
+        }),
+        NumberItems: numberItemsInSection,
+        NumberOfTotalColumns: numberOfTotalColumns,
+        ColumnWidth: itemTotalWidth,
+        NumberOfRows: numberOfRows,
+        MinimumInteritemSpacing: opts.minimumInteritemSpacing,
+        ActualLineSpacing: actualLineSpacing,
+        RowHeight: rowHeight,
+        SectionInsets: opts.sectionInsets,
+        HeaderReferenceSize: opts.headerReferenceSize,
+        FooterReferenceSize: opts.footerReferenceSize
+    });
+
+    return sectionLayout;
+}
+
+function getSections(rect, sectionsLayoutDetails) {
+    var sections = [];
+    var startSection = -1;
+    var endSection = -1;
+
+    var numberOfSections = sectionsLayoutDetails.length;
+    for(var i = 0; i < numberOfSections; i++) {
+        var layout = sectionsLayoutDetails[i];
+
+        if(Models.Geometry.rectIntersects(rect, layout.Frame) || Models.Geometry.rectIntersects(layout.Frame, rect)) {
+            sections.push(i);
+        }
+    }
+    return sections;
+};
+
+function layoutAttributesForItemAtIndexPath(indexPath, sectionLayoutInfo, itemSize) {
+    Models.IndexPath.is(indexPath);
+    HorizontalSectionLayoutDetails.is(sectionLayoutInfo);
+    Models.Size.is(itemSize);
+
+    var column = sectionLayoutInfo.getColumnForIndex(indexPath);
+    var x = sectionLayoutInfo.Frame.origin.x + column * sectionLayoutInfo.ColumnWidth + sectionLayoutInfo.MinimumInteritemSpacing * (column);
+    x +=  + sectionLayoutInfo.HeaderReferenceSize.width + sectionLayoutInfo.SectionInsets.left;
+
+    var row = indexPath.row % sectionLayoutInfo.NumberOfRows;
+    var y = row * sectionLayoutInfo.RowHeight + row * sectionLayoutInfo.ActualLineSpacing;
+    + sectionLayoutInfo.SectionInsets.top;
+    var origin = new Models.Point({x: x, y: y});
+    var size = new Models.Size({height: itemSize.height, width: itemSize.width});
+    var frame = new Models.Rect({origin: origin, size: size});
+
+    var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
+        "indexPath": indexPath,
+        "representedElementCategory": function(){
+            return "CollectionElementTypeCell";
+        },
+        "representedElementKind": function(){
+            return "default"
+        },
+        "frame": frame,
+        "size": size,
+        "hidden": false
+    });
+
+    return layoutAttributes;
+}
+
+function layoutAttributesForSupplementaryView(indexPath, sectionLayoutInfo, kind) {
+    var layoutAttributes = null;
+
+    if(kind == "header") {
+        var frame = new Models.Rect({
+            origin: new Models.Point({x: sectionLayoutInfo.Frame.origin.x, y: 0}),
+            size: new Models.Size({height: sectionLayoutInfo.HeaderReferenceSize.height, width: sectionLayoutInfo.HeaderReferenceSize.width})
+        });
+        var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
+            "indexPath": indexPath,
+            "representedElementCategory": function(){
+                return "CollectionElementTypeSupplementaryView";
+            },
+            "representedElementKind": function(){
+                return kind.toString();
+            },
+            "frame": frame,
+            "size": frame.size,
+            "hidden": false
+        });
+    } else if(kind == "footer") {
+        var x = sectionLayoutInfo.Frame.origin.x + sectionLayoutInfo.Frame.size.width - sectionLayoutInfo.FooterReferenceSize.width
+        var frame = new Models.Rect({
+            origin: new Models.Point({x: x, y: 0}),
+            size: new Models.Size({height: sectionLayoutInfo.FooterReferenceSize.height, width: sectionLayoutInfo.FooterReferenceSize.width})
+        });
+        var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
+            "indexPath": indexPath,
+            "representedElementCategory": function(){
+                return "CollectionElementTypeSupplementaryView";
+            },
+            "representedElementKind": function(){
+                return kind;
+            },
+            "frame": frame,
+            "size": frame.size,
+            "hidden": false
+        });
+    }
+
+    return layoutAttributes;
+}
+
+module.exports = {
+    LayoutDetails: HorizontalSectionLayoutDetails,
+    CreateLayoutDetailsForSection: creationSectionLayoutDetails,
+    GetSectionsForRect: getSections,
+    LayoutAttributesForItemAtIndexPath: layoutAttributesForItemAtIndexPath,
+    LayoutAttributesForSupplementaryView: layoutAttributesForSupplementaryView
+}
+
+},{"../../Enums/Enums":319,"../../Layout/CollectionViewLayoutAttributes":322,"../../Model/Models":332,"tcomb":313}],328:[function(require,module,exports){
 var t = require('tcomb');
 
 var Models = require('../../Model/Models');
@@ -22289,7 +22566,7 @@ VerticalSectionLayoutDetails.prototype.getEstimatedRowForPoint = function (point
 
 VerticalSectionLayoutDetails.prototype.getStartingIndexForRow = function (row) {
     //zero based
-    return Math.max(0, row * this.NumberOfColumns - this.NumberOfColumns);
+    return Math.max(0, row * this.NumberOfColumns);
 };
 
 VerticalSectionLayoutDetails.prototype.getRowForIndex = function (indexPath) {
@@ -22340,27 +22617,10 @@ function getSections(rect, sectionsLayoutDetails) {
     var numberOfSections = sectionsLayoutDetails.length;
     for(var i = 0; i < numberOfSections; i++) {
         var layout = sectionsLayoutDetails[i];
-        var topSectionHigherThanTopRect = layout.Frame.origin.y <= rect.origin.y;
-        var topSectionLowerThanTopRect = layout.Frame.origin.y + layout.Frame.size.height >= rect.origin.y;
 
-        var topSectionHigherThanBotRect = layout.Frame.origin.y <= rect.origin.y + rect.size.height;
-        var botSectionLowerThanBotRect = layout.Frame.origin.y + layout.Frame.size.height >= rect.origin.y + rect.size.height;
-
-        if(startSection <= 0 && topSectionHigherThanTopRect && topSectionLowerThanTopRect) {
-            startSection = i;
+        if(Models.Geometry.rectIntersects(rect, layout.Frame) || Models.Geometry.rectIntersects(layout.Frame, rect)) {
+            sections.push(i);
         }
-
-        if(endSection <= 0 && topSectionHigherThanBotRect && botSectionLowerThanBotRect) {
-            endSection = i;
-        }
-    }
-
-    if(endSection == -1) {
-        endSection = startSection;
-    }
-
-    for(var i = startSection; i <= endSection; i++) {
-        sections.push(i);
     }
 
     return sections;
@@ -22583,7 +22843,7 @@ var Models = require('../Model/Models');
 var Enums = require('../Enums/Enums');
 
 var ScrollViewDelegate = t.struct({
-    "scrollViewDidScroll": t.maybe(t.func([Enums.ScrollDirectionType, t.Num, t.Num], t.Nil)), //Direction, ScrollPosition (scrollTop), BottomOfView (ScrollTOp = BottomView means scrolled to bottom)
+    "scrollViewDidScroll": t.maybe(t.func(Models.Point, t.Nil)),
     "scrollViewWilLBeginDragging": t.maybe(t.func(t.Nil, t.Nil)),
     "scrollViewDidScrollToTop": t.maybe(t.func(t.Nil, t.Nil))
 }, 'ScrollViewDelegate');

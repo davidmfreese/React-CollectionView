@@ -3,7 +3,7 @@ var t = require('tcomb');
 var Models = require('../../Model/Models');
 var Enums = require('../../Enums/Enums');
 var FlowLayoutOptions = require('./FlowLayoutOptions');
-//var HorizontalFlowLayout = require('./HorizontalFlowLayout');
+var HorizontalFlowLayout = require('./HorizontalFlowLayout');
 var VerticalFlowLayout = require('./VerticalFlowLayout');
 var CollectionViewDatasource = require('./../CollectionViewLayout');
 var CollectionViewLayout = require('./../CollectionViewLayout');
@@ -25,15 +25,15 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
             _constrainedHeightOrWidth = sanitizedOpts.height;
         }
     };
-
     setConstrainedHeightOrWidth();
 
     var prepareLayout = function() {
+        _sectionLayoutDetails = [];
+        _totalContentSize = Models.Geometry.getSizeZero();
+        setConstrainedHeightOrWidth();
+
+        var numberOfSections = layoutDelegate.numberOfSectionsInCollectionView.call(this, null);
         if(sanitizedOpts.flowDirection == "ScrollDirectionTypeVertical") {
-            _sectionLayoutDetails = [];
-            _totalContentSize = Models.Geometry.getSizeZero();
-            setConstrainedHeightOrWidth();
-            var numberOfSections = layoutDelegate.numberOfSectionsInCollectionView.call(this, null);
             var totalHeight = 0;
             var startY = 0;
             for (var i = 0; i < numberOfSections; i++) {
@@ -47,8 +47,21 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
             }
 
             _totalContentSize = new Models.Size({height: totalHeight, width: _constrainedHeightOrWidth});
+
         } else if(opts.flowDirection == "ScrollDirectionTypeHorizontal") {
-            //Coming soon
+            var totalWidth = 0;
+            var startX = 0;
+            for (var i = 0; i < numberOfSections; i++) {
+                var indexPath = new Models.IndexPath({row: 0, section: i});
+                var numberItemsInSection = layoutDelegate.numberItemsInSection(indexPath);
+                var sectionLayoutInfo = HorizontalFlowLayout.CreateLayoutDetailsForSection(indexPath, numberItemsInSection, startX, sanitizedOpts);
+                _sectionLayoutDetails[i] = sectionLayoutInfo;
+                totalWidth += sectionLayoutInfo.Frame.size.width;
+
+                startX += sectionLayoutInfo.Frame.size.width;
+            }
+
+            _totalContentSize = new Models.Size({height: _constrainedHeightOrWidth, width: totalWidth});
         }
     };
 
@@ -76,8 +89,11 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
             }
             return _totalContentSize;
         },
-        "prepareLayout": function() {
+        "prepareLayout": function(callback) {
             prepareLayout();
+            if(callback) {
+                callback("success");
+            }
         },
         "layoutAttributesForElementsInRect": function(rect) {
             var layoutAttributesInRect = [];
@@ -89,6 +105,10 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
 
                 var sections = VerticalFlowLayout.GetSectionsForRect(rect, _sectionLayoutDetails);
                 var firstSection = _sectionLayoutDetails[sections[0]];
+                if(!firstSection) {
+                    return layoutAttributesInRect;
+                }
+
                 var currentY = firstSection.Frame.origin.y;
                 for (var j = 0; j < sections.length; j++) {
                     var sectionNum = sections[j];
@@ -128,14 +148,65 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
                         layoutAttributesInRect.push(footer);
                     }
                 }
+            } else if(opts.flowDirection == "ScrollDirectionTypeHorizontal") {
+
+                var sections = HorizontalFlowLayout.GetSectionsForRect(rect, _sectionLayoutDetails);
+                var firstSection = _sectionLayoutDetails[sections[0]];
+                if(!firstSection) {
+                    return layoutAttributesInRect;
+                }
+
+                var currentX = firstSection.Frame.origin.x;
+                for (var j = 0; j < sections.length; j++) {
+                    var sectionNum = sections[j];
+                    var indexPath = new Models.IndexPath({row: 0, section: sectionNum});
+                    var numberItemsInSection = this.layoutDelegate.numberItemsInSection(indexPath);
+                    var currentSection = _sectionLayoutDetails[sectionNum];
+                    if (currentSection.Frame.origin.x > rect.origin.x + rect.size.width) {
+                        break;
+                    }
+
+                    var header = HorizontalFlowLayout.LayoutAttributesForSupplementaryView(indexPath, _sectionLayoutDetails[indexPath.section], "header");
+                    if(header && !Models.Geometry.isSizeZero(header.frame.size)) {
+                        layoutAttributesInRect.push(header);
+                    }
+
+                    var startRow = currentSection.getEstimatedColumnForPoint(rect.origin);
+                    var startIndex = currentSection.getStartingIndexForColumn(startRow);
+
+                    for (var i = startIndex; i < numberItemsInSection; i++) {
+                        var indexPath = new Models.IndexPath({row: i, section: sectionNum});
+                        var layoutAttributes = this.layoutAttributesForItemAtIndexPath(indexPath);
+                        if (layoutAttributes.frame.origin.x + layoutAttributes.size.height < rect.origin.x) {
+                            continue;
+                        }
+                        if (layoutAttributes.frame.origin.x > rect.origin.x + rect.size.width) {
+                            break;
+                        }
+                        if (Models.Geometry.rectIntersects(layoutAttributes.frame, rect)) {
+                            layoutAttributesInRect.push(layoutAttributes);
+                        } else {
+                            //console.log("no intersection");
+                        }
+                    }
+
+                    var footer = HorizontalFlowLayout.LayoutAttributesForSupplementaryView(indexPath, _sectionLayoutDetails[indexPath.section], "footer");
+                    if(footer && !Models.Geometry.isSizeZero(footer.frame.size)) {
+                        layoutAttributesInRect.push(footer);
+                    }
+                }
             }
+
 
             return new CollectionViewLayout.Model.ArrayOfLayoutAttributes(layoutAttributesInRect);
         },
         "layoutAttributesForItemAtIndexPath": function(indexPath) {
 
-            if((opts.flowDirection == "ScrollDirectionTypeVertical")) {
+            if(opts.flowDirection == "ScrollDirectionTypeVertical") {
                 var attributes = VerticalFlowLayout.LayoutAttributesForItemAtIndexPath(indexPath, _sectionLayoutDetails[indexPath.section], sanitizedOpts.itemSize);
+                return attributes;
+            } else if(opts.flowDirection == "ScrollDirectionTypeHorizontal") {
+                var attributes = HorizontalFlowLayout.LayoutAttributesForItemAtIndexPath(indexPath, _sectionLayoutDetails[indexPath.section], sanitizedOpts.itemSize);
                 return attributes;
             }
         },

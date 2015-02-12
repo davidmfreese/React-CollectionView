@@ -30,7 +30,8 @@ describe('CollectionViewDataSource', function() {
                 }
             });
 
-            assert(datasource.numberItemsInSection(1) == numberOfItemsInSection, true, 'should return 1000');
+            var indexPath = new Models.IndexPath({row:0, section:1});
+            assert(datasource.numberItemsInSection(indexPath) == numberOfItemsInSection, true, 'should return 1000');
         });
 
         it('should throw exception for not returning CollectionViewCell for cellForItemAtIndexPath', function() {
@@ -45,7 +46,7 @@ describe('CollectionViewDataSource', function() {
                     }
                 });
 
-                CollectionViewCell.Protocol.is(datasource.cellForItemAtIndexPath(new IndexPath({row:1, section:1})));
+                CollectionViewCell.Protocol.is(datasource.cellForItemAtIndexPath(new Models.IndexPath({row:1, section:1})));
             });
         });
     });

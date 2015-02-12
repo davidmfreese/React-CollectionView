@@ -27,8 +27,10 @@ function sanitizeOptions(opts) {
     var _minLineSpacing = 0;
     var _headerReferenceSize = Models.Geometry.getSizeZero();
     var _footerReferenceSize = Models.Geometry.getSizeZero();
+    var _width = opts.width;
+    var _height = opts.height;
 
-    if(opts.flowDirection != "ScrollDirectionTypeVertical" && opts.flowDirection == "ScrollDirectionTypeHorizontal") {
+    if(opts.flowDirection != "ScrollDirectionTypeVertical" && opts.flowDirection != "ScrollDirectionTypeHorizontal") {
         throw "Unsupported flow direction";
     }
     if(!opts.itemSize || Models.Geometry.isSizeZero(opts.itemSize)) {
@@ -44,6 +46,7 @@ function sanitizeOptions(opts) {
     }
     if(opts.flowDirection == "ScrollDirectionTypeVertical") {
         _constrainedHeightOrWidth = opts.width;
+
     } else if (opts.flowDirection == "ScrollDirectionTypeHorizontal") {
         _constrainedHeightOrWidth = opts.height;
     }
@@ -62,8 +65,8 @@ function sanitizeOptions(opts) {
 
     var sanitizedOptions = new FlowLayoutOptions({
         flowDirection: opts.flowDirection,
-        width: _constrainedHeightOrWidth,
-        height: _constrainedHeightOrWidth,
+        width: _width,
+        height: _height,
         minimumLineSpacing: _minLineSpacing,
         minimumInteritemSpacing: _minInteritemSpacing,
         sectionInsets: _sectionInsets,

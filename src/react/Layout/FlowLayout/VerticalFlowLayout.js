@@ -25,7 +25,7 @@ VerticalSectionLayoutDetails.prototype.getEstimatedRowForPoint = function (point
 
 VerticalSectionLayoutDetails.prototype.getStartingIndexForRow = function (row) {
     //zero based
-    return Math.max(0, row * this.NumberOfColumns - this.NumberOfColumns);
+    return Math.max(0, row * this.NumberOfColumns);
 };
 
 VerticalSectionLayoutDetails.prototype.getRowForIndex = function (indexPath) {
@@ -76,27 +76,10 @@ function getSections(rect, sectionsLayoutDetails) {
     var numberOfSections = sectionsLayoutDetails.length;
     for(var i = 0; i < numberOfSections; i++) {
         var layout = sectionsLayoutDetails[i];
-        var topSectionHigherThanTopRect = layout.Frame.origin.y <= rect.origin.y;
-        var topSectionLowerThanTopRect = layout.Frame.origin.y + layout.Frame.size.height >= rect.origin.y;
 
-        var topSectionHigherThanBotRect = layout.Frame.origin.y <= rect.origin.y + rect.size.height;
-        var botSectionLowerThanBotRect = layout.Frame.origin.y + layout.Frame.size.height >= rect.origin.y + rect.size.height;
-
-        if(startSection <= 0 && topSectionHigherThanTopRect && topSectionLowerThanTopRect) {
-            startSection = i;
+        if(Models.Geometry.rectIntersects(rect, layout.Frame) || Models.Geometry.rectIntersects(layout.Frame, rect)) {
+            sections.push(i);
         }
-
-        if(endSection <= 0 && topSectionHigherThanBotRect && botSectionLowerThanBotRect) {
-            endSection = i;
-        }
-    }
-
-    if(endSection == -1) {
-        endSection = startSection;
-    }
-
-    for(var i = startSection; i <= endSection; i++) {
-        sections.push(i);
     }
 
     return sections;

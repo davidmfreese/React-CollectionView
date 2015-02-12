@@ -11,8 +11,8 @@ LayoutModel.ArrayOfLayoutAttributes = t.list(CollectionViewLayoutAttributes.Prot
 
 var CollectionViewLayoutProtocol = t.struct({
     "layoutDelegate": CollectionViewLayoutDelegate.Protocol,
-    "getCollectionViewContentSize": t.func(t.Nil, Models.Size),
-    "prepareLayout": t.func(t.Nil, t.Nil),
+    "getCollectionViewContentSize": t.func(t.Any, Models.Size),
+    "prepareLayout": t.func(t.Any, t.Nil),//func is callback
     "layoutAttributesForElementsInRect":t.func(Models.Rect, LayoutModel.ArrayOfLayoutAttributes),
     "layoutAttributesForItemAtIndexPath":t.func(Models.IndexPath, CollectionViewLayoutAttributes.Protocol),
     "prepareForCollectionViewUpdates": t.func(t.Nil, t.Any),
