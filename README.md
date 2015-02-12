@@ -1,5 +1,5 @@
 ## React-CollectionView
-[React-CollectionView](https://github.com/davidmfreese/React-CollectionView) brings UICollectionView to the web.  The goal is to create a performant collection view that delegates the layout and cell(s) implementation to the user.  Currently a simple FlowLayout implementation has been implemented and can be seen in the /examples folder.
+[React-CollectionView](https://github.com/davidmfreese/React-CollectionView) brings UICollectionView to the web.  The goal is to create a performant collection view that delegates the layout and cell(s) implementation to the user.  Currently a FlowLayout has been implemented and can be seen in action in the /examples folder.
 
 **WARNING** - This project is young and being developed in short iterations.  If you are interested in the project please fork.  There will be many breaking changes in the short term.  
 
