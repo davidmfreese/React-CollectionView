@@ -273,7 +273,6 @@ var CollectionView = React.createClass({
             width:contentSize.width,
             height:contentSize.height
         };
-
         return (
         <div className={this.props.className ? this.props.className + '-container' : 'scroll-container'}
             ref="scrollable"
@@ -382,6 +381,10 @@ var CollectionView = React.createClass({
         });
     },
     setStateFromScrollPosition: function(scrollPosition, force) {
+        if(debugScroll) {
+            this.indexPathsForVisibleItems();
+        }
+
         var newRect = this.getRectForScrollPosition(scrollPosition);
         var previousLoadedRect = this.state.currentLoadedRect;
         var previousScrollPosition = this.state.scrollPosition;
@@ -429,6 +432,34 @@ var CollectionView = React.createClass({
             isAnimating: true,
             animateScrollPosition: scrollPosition
         });
+    },
+    indexPathsForVisibleItems: function() {
+        var currentLayoutAttributes = this.state.layoutAttributes;
+        var frame = this.props.frame;
+        var origin = new Models.Point({
+            x: this.state.scrollPosition.x,
+            y: this.state.scrollPosition.y
+        });
+        var currentView = new Models.Rect({
+            origin: origin,
+            size: frame.size
+        });
+
+        var indexPathsForVisibleItemsArray = [];
+        for(var i = 0; i < currentLayoutAttributes.length; i++) {
+            var attributes = currentLayoutAttributes[i];
+            if(Models.Geometry.rectIntersects(currentView, attributes.frame)) {
+                indexPathsForVisibleItemsArray.push(attributes);
+            } else if(Models.Geometry.rectIntersects(attributes.frame, currentView)) {
+                indexPathsForVisibleItemsArray.push(attributes);
+            }
+        }
+
+        if(debugScroll) {
+            console.log(JSON.stringify(indexPathsForVisibleItemsArray, null, 4));
+        }
+
+        return indexPathsForVisibleItemsArray;
     }
 });
 
