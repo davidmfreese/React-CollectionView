@@ -65,7 +65,7 @@ function getQueryParams(qs) {
 
 var params = getQueryParams(document.location.search);
 
-var scrollInterval = 150;
+var scrollInterval = 250;
 var debugScroll = params && params.debugScroll ? params.debugScroll[0]: false;
 
 var _requestAnimationFrame = function(win, t) {
@@ -73,15 +73,22 @@ var _requestAnimationFrame = function(win, t) {
         || win["msR" + t] || function(fn) { setTimeout(fn, 60) }
 }(window, "requestAnimationFrame");
 
+if (!Date.now) {
+    Date.now = function now() {
+        return new Date().getTime();
+    };
+}
+
 //taken from http://www.sitepoint.com/simple-animations-using-requestanimationframe/
 function animate(duration, stepFunction, success) {
-    var end = new Date().getTime() + duration;
+    var end = Date.now() + duration;
     var step = function() {
 
-        var current = new Date().getTime();
+        var current = Date.now();
         var remaining = end - current;
 
-        if(remaining < 60) {
+        if(remaining < 16) {
+            stepFunction(1);
             success('success');
             return;
 
@@ -224,10 +231,14 @@ var CollectionView = React.createClass({
             var currentTop = domElement.scrollTop;
             var newTop = nextState.animateScrollPosition.y;
 
+            var currentLeft = domElement.scrollLeft;
+            var newLeft = nextState.animateScrollPosition.x;
+
             var stepFunction = function(rate) {
                 domElement.scrollTop = currentTop - rate*(currentTop - newTop);
+                domElement.scrollLeft = currentLeft - rate*(currentLeft - newLeft);
             };
-            animate(200, stepFunction, function() {
+            animate(200, stepFunction, function(success) {
                 setTimeout(function() {
                     that.setState({
                         isAnimating: false
@@ -385,10 +396,12 @@ var CollectionView = React.createClass({
                 var scrollPosition = that.state.scrollPosition;
                 var collectionViewLayout = that.props.collectionViewLayout;
                 if(collectionViewLayout.targetContentOffsetForProposedContentOffset) {
-                    var contentOffset = collectionViewLayout.targetContentOffsetForProposedContentOffset(scrollPosition); //new Models.Point({x: scrollPosition.x, y: scrollPosition.y - 100});
-                    that.scrollTo(contentOffset, false);
+                    var contentOffset = collectionViewLayout.targetContentOffsetForProposedContentOffset(scrollPosition);
+                    if(contentOffset && (contentOffset.x != scrollPosition.x || contentOffset.y != scrollPosition.y)) {
+                        that.scrollTo(contentOffset, false);
+                    }
                 }
-                //var contentOffset = new Models.Point({x: scrollPosition.x, y: scrollPosition.y - 100}); that.scrollTo(contentOffset, true);
+                //var contentOffset = new Models.Point({x: scrollPosition.x, y: scrollPosition.y - 200}); that.scrollTo(contentOffset, true);
             }, scrollInterval);
 
         this.setState({
