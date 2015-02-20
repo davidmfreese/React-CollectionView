@@ -19,7 +19,34 @@ var props = t.struct({
     scrollViewDelegate: t.maybe(ScrollViewDelegate.Protocol),
     preloadPageCount: t.maybe(t.Num),
     invalidateLayout: t.maybe(t.Bool),
-    resetScroll: t.maybe(t.Bool)
+    resetScroll: t.maybe(t.Bool),
+
+    //insertItemsAtIndexPaths: t.maybe(t.Arr(Models.IndexPath)),
+    moveItemAtIndexPathToIndexPath: t.maybe(t.struct({
+        currentIndexPath: Models.IndexPath,
+        newIndexPath: Models.IndexPath
+    })),
+    //deleteItemsAtIndexPaths: t.maybe(t.Arr(Models.IndexPath)),
+
+    allowsSelection: t.maybe(t.Bool),
+    allowsMultipleSelection: t.maybe(t.Bool),
+    selectItemAtIndexPath: t.maybe(t.struct({
+        indexPath: Models.IndexPath,
+        animated: t.Bool,
+        scrollPositionType: Enums.ScrollPositionType
+    })),
+    deselectItemAtIndexPath: t.maybe(t.struct({
+        indexPath: Models.IndexPath,
+        animated: t.Bool
+    })),
+
+    scrollToItemAtIndexPath: t.maybe(t.struct({
+        indexPath: Models.IndexPath,
+        animated: t.Bool,
+        scrollPositionType: Enums.ScrollPositionType
+    }))
+
+
 }, 'CollectionViewProps');
 
 var scrollInterval = 150;
@@ -90,7 +117,6 @@ var CollectionView = React.createClass({
         var newContentSize = nextState.collectionViewContentSize;
         var oldIsScrolling = this.state.isScrolling;
         var newIsScrolling = nextState.isScrolling;
-        var frame = this.props.frame;
 
         var shouldUpdate = false;
         if (nextProps && nextProps.invalidateLayout && nextProps.collectionViewLayout) {
@@ -104,8 +130,8 @@ var CollectionView = React.createClass({
 
                 var resetScroll = nextProps.resetScroll;
                 if(resetScroll) {
-                    self.refs.scrollable.getDOMNode().scrollTop = 0;
-                    self.refs.scrollable.getDOMNode().scrollLeft = 0;
+                    self.refs["scrollable"].getDOMNode().scrollTop = 0;
+                    self.refs["scrollable"].getDOMNode().scrollLeft = 0;
                     scrollPostion = Models.Geometry.getPointZero();
                     nextProps.resetScroll = false;
                 }
@@ -156,7 +182,6 @@ var CollectionView = React.createClass({
     },
     render: function() {
         var frame = this.props.frame;
-        var rect = this.state.currentLoadedRect;
 
         var children = [];
         var layoutAttributes = this.state.layoutAttributes;
@@ -220,10 +245,7 @@ var CollectionView = React.createClass({
             defaultBlockSize = this.state.defaultBlockSize;
         }
 
-        var preloadPageCount = this.props.preloadPageCount;
-        if(!preloadPageCount) {
-            preloadPageCount = 2; //per direction
-        }
+        var preloadPageCount = this.getPreloadPageCount();
 
         var currentY = scrollPosition.y - defaultBlockSize.height*preloadPageCount;
         var currentBottom = scrollPosition.y + defaultBlockSize.height*(preloadPageCount + 1);
@@ -246,6 +268,32 @@ var CollectionView = React.createClass({
 
         return rect;
     },
+    shouldRedrawFromScrolling: function(previousScrollPosition, newScrollPosition, previousLoadedRect, newLoadedRect) {
+        var frame = this.props.frame;
+        var preloadPageCount = this.getPreloadPageCount();
+
+        var isScrollUp = newScrollPosition.y < previousScrollPosition.y;
+        var isScrollDown = newScrollPosition.y > previousScrollPosition.y;
+        var isScrollLeft = newScrollPosition.x < previousScrollPosition.x;
+        var isScrollRight = newScrollPosition.x > previousScrollPosition.x;
+        var scrollUpThreshold = previousLoadedRect.origin.y + frame.size.height*preloadPageCount;
+        var scrollDownThreshold = Models.Geometry.rectGetMaxY(previousLoadedRect) - frame.size.height*preloadPageCount;
+        var scrollLeftThreshold = previousLoadedRect.origin.x + frame.size.width;
+        var scrollRightThreshold = Models.Geometry.rectGetMaxX(previousLoadedRect) - frame.size.width*preloadPageCount;
+
+        var redraw = false;
+        if(isScrollUp && newScrollPosition.y < scrollUpThreshold) {
+            redraw = true;
+        } else if(isScrollDown && newScrollPosition.y > scrollDownThreshold) {
+            redraw = true;
+        } else if(isScrollLeft && newScrollPosition.x < scrollLeftThreshold) {
+            redraw = true;
+        } else if(isScrollRight && newScrollPosition.x > scrollRightThreshold) {
+            redraw = true;
+        }
+
+        return redraw;
+    },
     onScroll: function(e) {
         var scrollPosition = new Models.Point({x: e.target.scrollLeft, y: e.target.scrollTop});
         if(this.props.scrollViewDelegate != null && this.props.scrollViewDelegate.scrollViewDidScroll != null) {
@@ -257,9 +305,6 @@ var CollectionView = React.createClass({
         var that = this;
         this.manageScrollTimeouts();
         this.setStateFromScrollPosition(scrollPosition);
-    },
-    nearBottom: function(scrollPosition) {
-        //This will be implemented to check if near bottom (and signal load more if necessary)
     },
     manageScrollTimeouts: function() {
         if (this.state.scrollTimeout) {
@@ -282,34 +327,10 @@ var CollectionView = React.createClass({
     },
     setStateFromScrollPosition: function(scrollPosition, force) {
         var newRect = this.getRectForScrollPosition(scrollPosition);
-        var currentLoadedRect = this.state.currentLoadedRect;
-        var oldScrollPosition = this.state.scrollPosition;
-        var frame = this.props.frame;
-        var preloadPageCount = this.props.preloadPageCount;
-        if(!preloadPageCount) {
-            preloadPageCount = 2; //per direction
-        }
+        var previousLoadedRect = this.state.currentLoadedRect;
+        var previousScrollPosition = this.state.scrollPosition;
 
-        var isScrollUp = scrollPosition.y < oldScrollPosition.y;
-        var isScrollDown = scrollPosition.y > oldScrollPosition.y;
-        var isScrollLeft = scrollPosition.x < oldScrollPosition.x;
-        var isScrollRight = scrollPosition.x > oldScrollPosition.x;
-        var scrollUpThreshold = currentLoadedRect.origin.y + frame.size.height*preloadPageCount;
-        var scrollDownThreshold = currentLoadedRect.origin.y + currentLoadedRect.size.height - frame.size.height*preloadPageCount;
-        var scrollLeftThreshold = currentLoadedRect.origin.x + frame.size.width;
-        var scrollRightThreshold = currentLoadedRect.origin.x + currentLoadedRect.size.width - frame.size.width*preloadPageCount;
-
-        var redraw = false;
-        if(isScrollUp && scrollPosition.y < scrollUpThreshold) {
-            redraw = true;
-        } else if(isScrollDown && scrollPosition.y > scrollDownThreshold) {
-            redraw = true;
-        } else if(isScrollLeft && scrollPosition.x < scrollLeftThreshold) {
-            redraw = true;
-        } else if(isScrollRight && scrollPosition.x > scrollRightThreshold) {
-            redraw = true;
-        }
-
+        var redraw = this.shouldRedrawFromScrolling(previousScrollPosition, scrollPosition, previousLoadedRect, newRect);
         if(redraw || force) {
             var layoutAttributes = this.props.collectionViewLayout.layoutAttributesForElementsInRect(newRect);
             var collectionViewContentSize = this.props.collectionViewLayout.getCollectionViewContentSize(null);
@@ -326,7 +347,7 @@ var CollectionView = React.createClass({
         }
     },
     setStateForRect: function(rect) {
-        var newRect = rect
+        var newRect = rect;
         var layoutAttributes = this.props.collectionViewLayout.layoutAttributesForElementsInRect(rect);
         var collectionViewContentSize = this.props.collectionViewLayout.getCollectionViewContentSize(null);
         this.setState({
@@ -334,6 +355,14 @@ var CollectionView = React.createClass({
             layoutAttributes: layoutAttributes,
             collectionViewContentSize: collectionViewContentSize
         });
+    },
+    getPreloadPageCount: function() {
+        var preloadPageCount = this.props.preloadPageCount;
+        if(!preloadPageCount) {
+            preloadPageCount = 1.0; //per direction
+        }
+
+        return preloadPageCount;
     }
 });
 

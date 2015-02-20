@@ -53,4 +53,12 @@ Geometry.rectIntersects = function(rect1, rect2) {
             )
 };
 
+Geometry.rectGetMaxX = function(rect) {
+    return rect.origin.x + rect.size.width;
+};
+
+Geometry.rectGetMaxY = function(rect) {
+    return rect.origin.y + rect.size.height;
+};
+
 module.exports = Geometry;

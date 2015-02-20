@@ -1,9 +1,11 @@
 //Enums
 var CollectionElementType = require('./CollectionElementType');
 var ScrollDirectionType = require('./ScrollDirectionType');
+var ScrollPositionType = require('./ScrollPositionType');
 var Enums = {
     CollectionElementType: CollectionElementType,
-    ScrollDirectionType: ScrollDirectionType
+    ScrollDirectionType: ScrollDirectionType,
+    ScrollPositionType: ScrollPositionType
 };
 
 module.exports = Enums;
