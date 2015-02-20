@@ -49,20 +49,24 @@ var props = t.struct({
 
 }, 'CollectionViewProps');
 
-function getParameterByName(name) {
-    name = name.toLowerCase();
-    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-        results = regex.exec(location.search);
-    return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+function getQueryParams(qs) {
+    qs = qs.split("+").join(" ");
+
+    var params = {}, tokens,
+        re = /[?&]?([^=]+)=([^&]*)/g;
+
+    while (tokens = re.exec(qs)) {
+        params[decodeURIComponent(tokens[1])]
+            = decodeURIComponent(tokens[2]);
+    }
+
+    return params;
 }
 
+var params = getQueryParams(document.location.search);
+
 var scrollInterval = 150;
-var debugScroll = false;
-var debugScrollParam = getParameterByName("debugScroll");
-if(debugScrollParam == true) {
-    debugScroll = debugScrollParam;
-}
+var debugScroll = params && params.debugScroll ? params.debugScroll[0]: false;
 
 var _requestAnimationFrame = function(win, t) {
     return win["webkitR" + t] || win["r" + t] || win["mozR" + t]
