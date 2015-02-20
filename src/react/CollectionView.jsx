@@ -59,13 +59,12 @@ function getQueryParams(qs) {
         params[decodeURIComponent(tokens[1])]
             = decodeURIComponent(tokens[2]);
     }
-
     return params;
 }
 
 var params = getQueryParams(document.location.search);
 
-var scrollInterval = 250;
+var scrollInterval = 100;
 var debugScroll = params && params.debugScroll ? params.debugScroll[0]: false;
 
 var _requestAnimationFrame = function(win, t) {

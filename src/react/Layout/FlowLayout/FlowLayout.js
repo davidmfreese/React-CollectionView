@@ -216,7 +216,7 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
         "invalidateLayout": function() {
             prepareLayout();
         }
-    });
+    }, true);//allow this to be mutable
 
     return CollectionViewFlowLayout;
 }

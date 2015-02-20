@@ -1,5 +1,6 @@
 var rCV = ReactCollectionView;
 var React = rCV.React;
+var Models = rCV.Models;
 
 var collectionViewSize = new rCV.Models.Size({height: 256, width:256});
 var cellSize = new rCV.Models.Size({height:256, width:256});
@@ -129,7 +130,34 @@ var flowLayoutOptions = {
 };
 
 var flowLayout = rCV.CollectionViewFlowLayout.Layout(layoutDelegate, flowLayoutOptions);
+flowLayout.targetContentOffsetForProposedContentOffset = function(point) {
+        var rect = new Models.Rect({
+            origin: new Models.Point({
+                x: point.x,
+                y: point.y
+            }),
+            size: new Models.Size({
+                width:collectionViewSize.width,
+                height:collectionViewSize.height
+            })
+        })
+        var attributesInRect = flowLayout.layoutAttributesForElementsInRect(rect);
+        if(attributesInRect && attributesInRect.length > 0) {
 
+            for (var i = 0; i < attributesInRect.length; i++) {
+                var layout = attributesInRect[i];
+                var centerX = layout.frame.origin.x + layout.frame.size.width/2;
+                if (point.x < centerX) {
+                    return new Models.Point({
+                        x: layout.frame.origin.x,
+                        y: layout.frame.origin.y
+                    });
+                }
+            }
+        }
+
+        return point;
+};
 
 var frame = new rCV.Models.Rect({
     origin: new rCV.Models.Point({x:0, y:0}),
