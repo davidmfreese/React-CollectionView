@@ -45,7 +45,7 @@ Geometry.rectIntersects = function(rect1, rect2) {
     return  !(rect1.origin.x + rect1.size.width < rect2.origin.x
         || rect2.origin.x + rect2.size.width < rect1.origin.x
         || rect1.origin.y + rect1.size.height < rect2.origin.y
-        || rect2.origin.y + rect2.size.width < rect1.origin.y)
+        || rect2.origin.y + rect2.size.height < rect1.origin.y)
 
         || (
                 rect1.origin.x >= rect2.origin.x && rect1.origin.x <= rect2.origin.x + rect2.size.width
