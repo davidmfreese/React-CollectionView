@@ -52,6 +52,33 @@ var props = t.struct({
 var scrollInterval = 150;
 var debugScroll = false;
 
+var _requestAnimationFrame = function(win, t) {
+    return win["webkitR" + t] || win["r" + t] || win["mozR" + t]
+        || win["msR" + t] || function(fn) { setTimeout(fn, 60) }
+}(window, "requestAnimationFrame");
+
+//taken from http://www.sitepoint.com/simple-animations-using-requestanimationframe/
+function animate(duration, stepFunction, success) {
+    var end = new Date().getTime() + duration;
+    var step = function() {
+
+        var current = new Date().getTime();
+        var remaining = end - current;
+
+        if(remaining < 60) {
+            success('success');
+            return;
+
+        } else {
+            var rate = 1 - remaining/duration;
+            stepFunction(rate);
+        }
+
+        _requestAnimationFrame(step);
+    }
+    step();
+}
+
 var CollectionView = React.createClass({
     propTypes: tReact.react.toPropTypes(props),
     getInitialState: function() {
@@ -63,7 +90,9 @@ var CollectionView = React.createClass({
             currentLoadedRect: Models.Geometry.getRectZero(),
             defaultBlockSize: Models.Geometry.getSizeZero(),
             frame: Models.Geometry.getRectZero(),
-            layoutAttributes: []
+            layoutAttributes: [],
+            isAnimating: false,
+            animateScrollPosition: Models.Geometry.getPointZero()
         };
     },
     componentDidMount: function() {
@@ -172,6 +201,23 @@ var CollectionView = React.createClass({
             shouldUpdate = true;
         } else if(oldIsScrolling && !newIsScrolling) {
             //shouldUpdate = true;
+        } else if(nextState.isAnimating && !this.state.isAnimating) {
+            var that = this;
+
+            var domElement = that.refs["scrollable"].getDOMNode();
+            var currentTop = domElement.scrollTop;
+            var newTop = nextState.animateScrollPosition.y;
+
+            var stepFunction = function(rate) {
+                domElement.scrollTop = currentTop - rate*(currentTop - newTop);
+            };
+            animate(200, stepFunction, function() {
+                setTimeout(function() {
+                    that.setState({
+                        isAnimating: false
+                    });
+                }, 150);
+            });
         }
 
         if(debugScroll) {
@@ -295,6 +341,9 @@ var CollectionView = React.createClass({
         return redraw;
     },
     onScroll: function(e) {
+        if(this.state.isAnimating) {
+            return;
+        }
         var scrollPosition = new Models.Point({x: e.target.scrollLeft, y: e.target.scrollTop});
         if(this.props.scrollViewDelegate != null && this.props.scrollViewDelegate.scrollViewDidScroll != null) {
             this.props.scrollViewDelegate.scrollViewDidScroll(scrollPosition);
@@ -313,11 +362,18 @@ var CollectionView = React.createClass({
 
         var that = this,
             scrollTimeout = setTimeout(function() {
-                //that.setStateFromScrollPosition(that.state.scrollPosition, true);
                 that.setState({
                     isScrolling: false,
                     scrollTimeout: undefined
                 })
+
+                var scrollPosition = that.state.scrollPosition;
+                var collectionViewLayout = that.props.collectionViewLayout;
+                if(collectionViewLayout.targetContentOffsetForProposedContentOffset) {
+                    var contentOffset = collectionViewLayout.targetContentOffsetForProposedContentOffset(scrollPosition); //new Models.Point({x: scrollPosition.x, y: scrollPosition.y - 100});
+                    that.scrollTo(contentOffset, false);
+                }
+                //var contentOffset = new Models.Point({x: scrollPosition.x, y: scrollPosition.y - 100}); that.scrollTo(contentOffset, true);
             }, scrollInterval);
 
         this.setState({
@@ -363,6 +419,16 @@ var CollectionView = React.createClass({
         }
 
         return preloadPageCount;
+    },
+    scrollTo: function(scrollPosition, animated) {
+        if(this.state.isAnimating) {
+            return;
+        }
+
+        this.setState({
+            isAnimating: true,
+            animateScrollPosition: scrollPosition
+        });
     }
 });
 

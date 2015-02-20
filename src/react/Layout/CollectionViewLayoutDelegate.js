@@ -9,7 +9,8 @@ var CollectionViewLayoutDelegate = t.struct({
     "sizeForItemAtIndexPath": t.maybe(t.func(Models.IndexPath, Models.Size)),
     "insetForSectionAtIndex": t.maybe(t.func(Models.IndexPath, Models.EdgeInsets)),
     "minimumLineSpacingForSectionAtIndex": t.maybe(t.func(Models.IndexPath, t.Num)),
-    "shouldSelectItemAtIndexPath": t.maybe(t.func(Models.IndexPath, t.Bool))
+    "shouldSelectItemAtIndexPath": t.maybe(t.func(Models.IndexPath, t.Bool)),
+    "targetContentOffsetForProposedContentOffset": t.maybe(t.func(Models.Point, Models.Point))
 }, 'CollectionViewLayoutDelegate');
 
 module.exports.Protocol = CollectionViewLayoutDelegate;
