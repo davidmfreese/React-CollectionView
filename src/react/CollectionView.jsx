@@ -6,7 +6,6 @@ var tReact = require('tcomb-react');
 var CollectionViewDatasource = require('./Datasource/CollectionViewDatasource');
 var CollectionViewDelegate = require('./CollectionViewDelegate');
 var CollectionViewLayout = require('./Layout/CollectionViewLayout');
-var CollectionViewLayoutAttributes = require('./Layout/CollectionViewLayoutAttributes');
 var ScrollViewDelegate = require('./ScrollView/ScrollViewDelegate');
 var ScrollView = require('./ScrollView/ScrollView.jsx');
 
@@ -21,13 +20,15 @@ var collectionViewProps = t.struct({
     preloadPageCount: t.maybe(t.Num),
     invalidateLayout: t.maybe(t.Bool),
     resetScroll: t.maybe(t.Bool),
+    paging: t.maybe(t.Bool),
+    pagingDirection: t.maybe(Enums.ScrollDirectionType),
 
-    //insertItemsAtIndexPaths: t.maybe(t.Arr(Models.IndexPath)),
+    insertItemsAtIndexPaths: t.maybe(t.list(Models.IndexPath)),
     moveItemAtIndexPathToIndexPath: t.maybe(t.struct({
         currentIndexPath: Models.IndexPath,
         newIndexPath: Models.IndexPath
     })),
-    //deleteItemsAtIndexPaths: t.maybe(t.Arr(Models.IndexPath)),
+    deleteItemsAtIndexPaths: t.maybe(t.list(Models.IndexPath)),
 
     allowsSelection: t.maybe(t.Bool),
     allowsMultipleSelection: t.maybe(t.Bool),
@@ -226,7 +227,8 @@ var CollectionView = React.createClass({
             contentSize={this.state.collectionViewContentSize}
             scrollTimeout={100}
             shouldUpdate={true}
-            paging={false}
+            paging={this.props.paging ? this.props.paging : false}
+            pagingDirection={this.props.pagingDirection ? this.props.pagingDirection : "ScrollDirectionTypeHorizontal"}
             debugScroll={debugScroll}
         />
         )
@@ -254,6 +256,10 @@ var CollectionView = React.createClass({
     scrollViewDidEndDecelerating: function(scrollView) {
         if(this.props.scrollViewDelegate && this.props.scrollViewDelegate.scrollViewDidEndDecelerating) {
             this.props.scrollViewDelegate.scrollViewDidEndDecelerating(scrollView);
+        }
+
+        if(this.props.paging) { //paging handled by scrollview
+            return;
         }
 
         var scrollPosition = scrollView.state.scrollPosition;

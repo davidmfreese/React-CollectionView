@@ -15,6 +15,7 @@ var scrollViewProps = t.struct({
     scrollTimeout: t.Num,
     shouldUpdate: t.Bool,
     paging: t.Bool,
+    pagingDirection: Enums.ScrollDirectionType,
     debugScroll: t.maybe(t.Bool)
 }, 'ScrollViewProps');
 
@@ -29,6 +30,7 @@ var scrollDirType = {
 //enable touch events
 React.initializeTouchEvents(true);
 
+var debugEvents = true;
 var ScrollView = React.createClass({
     propTypes: tReact.react.toPropTypes(scrollViewProps),
     getInitialState: function() {
@@ -38,7 +40,10 @@ var ScrollView = React.createClass({
             isScrolling: false,
             animatingToScrollPosition: false,
             velocity: 0,
-            scrollDirections: [scrollDirType.None]
+            scrollDirections: [scrollDirType.None],
+            mouseDown: false,
+            mouseDownPosition: Models.Geometry.getPointZero(),
+            scrollPositionOnMouseDown: Models.Geometry.getPointZero()
         };
     },
     componentDidMount: function() {
@@ -90,14 +95,14 @@ var ScrollView = React.createClass({
                 style={scrollableStyle}
                 onScroll={this.onScroll}
 
-                onTouchStart={this.onTouchStart}
-                onTouchMove={this.onTouchMove}
-                onTouchCancel={this.onTouchCancel}
-                onTouchEnd={this.onTouchEnd}
+                onTouchStartCapture={this.onTouchStart}
+                onTouchMoveCapture={this.onTouchMove}
+                onTouchCancelCapture={this.onTouchCancel}
+                onTouchEndCapture={this.onTouchEnd}
                 onDragStart={this.onDragStart}
-                onDrag={this.onDrag}
-                onDragEnd={this.onDragEnd}
-                onDragLeave={this.onDragLeave}>
+                onMouseDownCapture={this.onMouseDown}
+                onMouseMoveCapture={this.onMouseMove}
+                onMouseUp={this.onMouseUp}>
                 <div ref="smoothScrollingWrapper" style={wrapperStyle}>
                     {this.props.content}
                 </div>
@@ -105,31 +110,85 @@ var ScrollView = React.createClass({
         )
     },
     onTouchStart: function(e) {
-
+        if(debugEvents) {
+            console.log('touch start: ' + e.clientX + ', ' + e.clientY);
+        }
+        e.preventDefault()
     },
     onTouchMove: function(e) {
-
+        if(debugEvents) {
+            console.log('touch move: ' + e.clientX + ', ' + e.clientY);
+        }
+        e.preventDefault()
     },
     onTouchCancel: function(e) {
-
+        if(debugEvents) {
+            console.log('touch cancel: ' + e.clientX + ', ' + e.clientY);
+        }
+        e.preventDefault()
     },
     onTouchEnd: function(e) {
-
+        if(debugEvents) {
+            console.log('touch end: ' + e.clientX + ', ' + e.clientY);
+        }
+        e.preventDefault();
     },
     onDragStart: function(e) {
-
+        e.preventDefault();
+        e.stopPropagation();
     },
-    onDrag: function(e) {
+    onMouseDown: function(e) {
+        if (debugEvents) {
+            console.log('mouse down: ' + e.clientX + ', ' + e.clientY);
+        }
 
+        this.setState({
+            mouseDown: true,
+            mouseDownPosition: new Models.Point({x: e.clientX, y: e.clientY}),
+            scrollPositionOnMouseDown: this.state.scrollPosition
+        });
+
+        e.preventDefault();
     },
-    onDragEnd: function(e) {
+    onMouseMove: function(e) {
+        if(this.state.mouseDown) {
+            if(debugEvents) {
+                console.log('mouse move: ' + e.clientX + ', ' + e.clientY);
+            }
 
+            var mouseDownOriginalPosition = this.state.mouseDownPosition;
+            var currentScrollPosition = this.state.scrollPositionOnMouseDown;
+            var deltaX = mouseDownOriginalPosition.x - e.clientX;
+            var deltaY = mouseDownOriginalPosition.y - e.clientY;
+
+            if(this.props.paging) { //only scroll if paging is enabled
+                this.scrollTo(new Models.Point({
+                    x: currentScrollPosition.x + deltaX,
+                    y: currentScrollPosition.y + deltaY
+                }), false);
+            }
+        }
+        e.preventDefault();
     },
-    onDragLeave: function(e) {
+    onMouseUp: function(e) {
+        var that = this;
+        if (debugEvents) {
+            console.log('mouse up: ' + e.clientX + ', ' + e.clientY);
+        }
 
+        this.setState({
+            mouseDown: false,
+            mouseDownPosition: Models.Geometry.getPointZero(),
+            scrollPositionOnMouseDown: Models.Geometry.getPointZero()
+        }, function () {
+            if (this.props.paging) {
+                that.handlePaging(this.state.scrollPosition);
+            }
+        });
+        e.preventDefault();
     },
     onScroll: function(e) {
-        if(this.state.animatingToScrollPosition) {
+        if(this.state.animatingToScrollPosition || this.state.mouseDown) {
             return;
         }
         var scrollPosition = new Models.Point({x: e.target.scrollLeft, y: e.target.scrollTop});
@@ -238,6 +297,29 @@ var ScrollView = React.createClass({
             this.setState({
                 scrollPosition: toScrollPosition
             })
+        }
+    },
+    handlePaging: function(scrollPosition) {
+        if(this.props.pagingDirection === "ScrollDirectionTypeVertical") {
+            var remainder = scrollPosition.y % this.props.frame.size.height;
+            var page = Math.floor(scrollPosition.y / this.props.frame.size.height);
+            if (remainder > this.props.frame.size.height / 2) {
+                page++;
+            }
+            this.scrollTo(new Models.Point({
+                x: 0,
+                y: (page) * this.props.frame.size.height
+            }), true);
+        } else { //Horizontal
+            var remainder = scrollPosition.x % this.props.frame.size.width;
+            var page = Math.floor(scrollPosition.x / this.props.frame.size.width);
+            if (remainder > this.props.frame.size.width / 2) {
+                page++;
+            }
+            this.scrollTo(new Models.Point({
+                x: (page) * this.props.frame.size.width,
+                y: 0
+            }), true);
         }
     }
 });

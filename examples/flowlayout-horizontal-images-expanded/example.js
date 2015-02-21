@@ -167,7 +167,11 @@ var props = {
     collectionViewDatasource: datasourceDelegate,
     frame: frame,
     collectionViewDelegate: collectionViewDelegate,
-    collectionViewLayout: flowLayout
+    collectionViewLayout: flowLayout,
+    //If this is false ScrollView will handle paging.
+    //If this is true than CollectionView will call targetContentOffsetForProposedContentOffset.
+    paging: true,
+    pagingDirection: "ScrollDirectionTypeHorizontal"
 };
 
 var collectionView = React.createElement(rCV.CollectionView.View, props);
