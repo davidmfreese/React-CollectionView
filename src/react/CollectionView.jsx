@@ -11,6 +11,9 @@ var ScrollView = require('./ScrollView/ScrollView.jsx');
 
 var Models = require('./Model/Models');
 var Enums = require('./Enums/Enums');
+
+var Utils = require('./Utils/Utils');
+
 var collectionViewProps = t.struct({
     collectionViewDatasource: CollectionViewDatasource.Protocol,
     frame: Models.Rect,
@@ -59,21 +62,7 @@ var scrollDirType = {
     Down: 4
 }
 
-function getQueryParams(qs) {
-    qs = qs.split("+").join(" ");
-
-    var params = {}, tokens,
-        re = /[?&]?([^=]+)=([^&]*)/g;
-
-    while (tokens = re.exec(qs)) {
-        params[decodeURIComponent(tokens[1])]
-            = decodeURIComponent(tokens[2]);
-    }
-    return params;
-}
-
-var params = getQueryParams(document.location.search);
-var debugScroll = params && params.debugScroll ? params.debugScroll[0]: false;
+var debugScroll = Utils.Query.getQueryParamValue(document.location.search, 'debugScroll');
 
 var CollectionView = React.createClass({
     propTypes: tReact.react.toPropTypes(collectionViewProps),

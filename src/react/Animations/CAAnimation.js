@@ -10,9 +10,15 @@ if (!Date.now) {
     };
 }
 
-function easingLinear(remaining, duration) {
-    return 1 - remaining/duration;
+function getRate(t) {
+    return 1 - t;
 }
+
+function easelinear(t) { return t }
+
+function easeOutQuad(t) { return t*(2-t) }
+
+function easeInOutCubic(t) { return t<.5 ? 4*t*t*t : (t-1)*(2*t-2)*(2*t-2)+1 }
 
 //taken from http://www.sitepoint.com/simple-animations-using-requestanimationframe/
 function animateScroll(duration, easingType, stepFunction, success) {
@@ -21,16 +27,27 @@ function animateScroll(duration, easingType, stepFunction, success) {
 
         var current = Date.now();
         var remaining = end - current;
+        var tScaled = remaining/duration;
 
         if(remaining < 16) {
             stepFunction(1);
             success('success');
             return;
-
         } else {
             var rate = 0;
-            if(!easingType || easingType == "linear") {
-                rate = easingLinear(remaining, duration);
+            var t = 0;
+            if(!easingType || easingType == 'linear') {
+                //console.log('linear');
+                var t = easelinear(tScaled);
+                rate = getRate(t);
+            } else if(easingType == 'outQuad') {
+                //console.log('outQuad');
+                var t = easeOutQuad(tScaled);
+                rate = getRate(t);
+            } else if(easingType == 'inOutCubic') {
+                //console.log('inOutCubic');
+                var t = easeInOutCubic(tScaled);
+                rate = getRate(t);
             }
             stepFunction(rate);
         }

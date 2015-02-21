@@ -9,6 +9,8 @@ var ScrollViewDelegate = require('./ScrollViewDelegate');
 var Models = require('../Model/Models');
 var Enums = require('../Enums/Enums');
 
+var Utils = require('../Utils/Utils');
+
 var scrollViewProps = t.struct({
     content: t.Arr,
     frame: Models.Rect,
@@ -32,7 +34,7 @@ var scrollDirType = {
 //enable touch events
 React.initializeTouchEvents(true);
 
-var debugEvents = true;
+var debugEvents = Utils.Query.getQueryParamValue(document.location.search, 'debugEvents');
 var ScrollView = React.createClass({
     propTypes: tReact.react.toPropTypes(scrollViewProps),
     getInitialState: function() {
@@ -296,7 +298,7 @@ var ScrollView = React.createClass({
                         domElement.scrollLeft = currentLeft - rate * (currentLeft - newLeft);
                     };
 
-                    CAAnimation.animateScroll(200, "linear", stepFunction, function (success) {
+                    CAAnimation.animateScroll(200, 'linear', stepFunction, function (success) {
                         if (that.props.scrollViewDelegate && that.props.scrollViewDelegate.scrollViewDidEndScrollingAnimation) {
                             that.props.scrollViewDelegate.scrollViewDidEndScrollingAnimation(this);
                         }
