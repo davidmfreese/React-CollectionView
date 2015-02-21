@@ -40,12 +40,12 @@ var ScrollView = React.createClass({
             isScrolling: false,
             animatingToScrollPosition: false,
             velocity: 0,
-            scrollDirections: [scrollDirType.None],
-            mouseDown: false,
-            mouseDownPosition: Models.Geometry.getPointZero(),
-            scrollPositionOnMouseDown: Models.Geometry.getPointZero()
+            scrollDirections: [scrollDirType.None]
         };
     },
+    mouseDown: false,
+    mouseDownPosition: Models.Geometry.getPointZero(),
+    scrollPositionOnMouseDown: Models.Geometry.getPointZero(),
     componentDidMount: function() {
         if (this.props.contentSize) {
             console.log('isTypeSafe<-->ContentSize: ' + Models.Size.is(this.props.contentSize));
@@ -77,6 +77,11 @@ var ScrollView = React.createClass({
             position: 'absolute'
         };
 
+        if(this.props.paging) {
+            scrollableStyle.overflowX = 'hidden';
+            scrollableStyle.overflowY = 'hidden';
+        }
+
         var clearStyle = {
             clear:"both"
         };
@@ -99,9 +104,9 @@ var ScrollView = React.createClass({
                 onTouchMoveCapture={this.onTouchMove}
                 onTouchCancelCapture={this.onTouchCancel}
                 onTouchEndCapture={this.onTouchEnd}
-                onDragStart={this.onDragStart}
-                onMouseDownCapture={this.onMouseDown}
-                onMouseMoveCapture={this.onMouseMove}
+                onDragStartCapture={this.onDragStart}
+                onMouseDown={this.onMouseDown}
+                onMouseMove={this.onMouseMove}
                 onMouseUp={this.onMouseUp}>
                 <div ref="smoothScrollingWrapper" style={wrapperStyle}>
                     {this.props.content}
@@ -111,25 +116,25 @@ var ScrollView = React.createClass({
     },
     onTouchStart: function(e) {
         if(debugEvents) {
-            console.log('touch start: ' + e.clientX + ', ' + e.clientY);
+            console.log('touch start: ' + e.pageX + ', ' + e.pageY);
         }
         e.preventDefault()
     },
     onTouchMove: function(e) {
         if(debugEvents) {
-            console.log('touch move: ' + e.clientX + ', ' + e.clientY);
+            //console.log('touch move: ' + e.pageX + ', ' + e.pageY);
         }
         e.preventDefault()
     },
     onTouchCancel: function(e) {
         if(debugEvents) {
-            console.log('touch cancel: ' + e.clientX + ', ' + e.clientY);
+            //console.log('touch cancel: ' + e.pageX + ', ' + e.pageY);
         }
         e.preventDefault()
     },
     onTouchEnd: function(e) {
         if(debugEvents) {
-            console.log('touch end: ' + e.clientX + ', ' + e.clientY);
+            //console.log('touch end: ' + e.pageX + ', ' + e.pageY);
         }
         e.preventDefault();
     },
@@ -139,32 +144,45 @@ var ScrollView = React.createClass({
     },
     onMouseDown: function(e) {
         if (debugEvents) {
-            console.log('mouse down: ' + e.clientX + ', ' + e.clientY);
+            console.log('mouse down: ' + e.pageX + ', ' + e.pageY);
         }
 
-        this.setState({
-            mouseDown: true,
-            mouseDownPosition: new Models.Point({x: e.clientX, y: e.clientY}),
-            scrollPositionOnMouseDown: this.state.scrollPosition
+        this.mouseDown = true;
+        this.mouseDownPosition = new Models.Point({x: e.pageX, y: e.pageY});
+        this.scrollPositionOnMouseDown = new Models.Point({
+            x: this.refs["scrollable"].getDOMNode().scrollLeft,
+            y: this.refs["scrollable"].getDOMNode().scrollTop
         });
+
+        if(this.props.paging) {
+            this.scrollTo(this.scrollPositionOnMouseDown, false);
+        }
 
         e.preventDefault();
     },
     onMouseMove: function(e) {
-        if(this.state.mouseDown) {
+        if(this.mouseDown) {
             if(debugEvents) {
-                console.log('mouse move: ' + e.clientX + ', ' + e.clientY);
+                console.log('mouse move: ' + e.pageX + ', ' + e.pageY);
             }
 
-            var mouseDownOriginalPosition = this.state.mouseDownPosition;
-            var currentScrollPosition = this.state.scrollPositionOnMouseDown;
-            var deltaX = mouseDownOriginalPosition.x - e.clientX;
-            var deltaY = mouseDownOriginalPosition.y - e.clientY;
+            var mouseDownOriginalPosition = this.mouseDownPosition;
+            var currentScrollPosition = this.scrollPositionOnMouseDown;
+            var deltaX = mouseDownOriginalPosition.x - e.pageX;
+            var deltaY = mouseDownOriginalPosition.y - e.pageY;
+
+            var x = 0;
+            var y = 0;
+            if(this.props.pagingDirection === "ScrollDirectionTypeVertical") {
+                y =  currentScrollPosition.y + deltaY;
+            } else { //horizontal
+                x = currentScrollPosition.x + deltaX;
+            }
 
             if(this.props.paging) { //only scroll if paging is enabled
                 this.scrollTo(new Models.Point({
-                    x: currentScrollPosition.x + deltaX,
-                    y: currentScrollPosition.y + deltaY
+                    x: x,
+                    y: y
                 }), false);
             }
         }
@@ -173,18 +191,16 @@ var ScrollView = React.createClass({
     onMouseUp: function(e) {
         var that = this;
         if (debugEvents) {
-            console.log('mouse up: ' + e.clientX + ', ' + e.clientY);
+            console.log('mouse up: ' + e.pageX + ', ' + e.pageY);
         }
 
-        this.setState({
-            mouseDown: false,
-            mouseDownPosition: Models.Geometry.getPointZero(),
-            scrollPositionOnMouseDown: Models.Geometry.getPointZero()
-        }, function () {
-            if (this.props.paging) {
-                that.handlePaging(this.state.scrollPosition);
-            }
-        });
+        this.mouseDown = false;
+        this.mouseDownPosition = Models.Geometry.getPointZero();
+        this.scrollPositionOnMouseDown = Models.Geometry.getPointZero();
+        if (this.props.paging) {
+            that.handlePaging(this.state.scrollPosition);
+        }
+
         e.preventDefault();
     },
     onScroll: function(e) {
