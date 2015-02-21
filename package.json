@@ -20,7 +20,8 @@
     "react": "^0.12.2",
     "tcomb": "^0.4.0",
     "tcomb-react": "^0.2.0",
-    "tcomb-validation": "^0.3.0"
+    "tcomb-validation": "^0.3.0",
+    "velocity-animate": "^1.2.2"
   },
   "devDependencies": {
     "browserify": "~6.0.3",

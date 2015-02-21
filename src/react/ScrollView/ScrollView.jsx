@@ -1,6 +1,8 @@
 var React = require('react/addons');
 var t = require('tcomb');
 var tReact = require('tcomb-react');
+//var Velocity = require('velocity-animate');
+var CAAnimation = require("../Animations/CAAnimation");
 
 var ScrollViewDelegate = require('./ScrollViewDelegate');
 
@@ -294,17 +296,15 @@ var ScrollView = React.createClass({
                         domElement.scrollLeft = currentLeft - rate * (currentLeft - newLeft);
                     };
 
-                    animate(200, stepFunction, function (success) {
+                    CAAnimation.animateScroll(200, "linear", stepFunction, function (success) {
                         if (that.props.scrollViewDelegate && that.props.scrollViewDelegate.scrollViewDidEndScrollingAnimation) {
                             that.props.scrollViewDelegate.scrollViewDidEndScrollingAnimation(this);
                         }
 
-                        setTimeout(function () {
-                            that.setState({
-                                animatingToScrollPosition: false
-                            });
+                        that.setState({
+                            animatingToScrollPosition: false
+                        });
 
-                        }, 50);
                     });
                 });
         } else {
@@ -339,40 +339,5 @@ var ScrollView = React.createClass({
         }
     }
 });
-
-//TODO: better RAF implementation and seperate file
-var _requestAnimationFrame = function(win, t) {
-    return win["webkitR" + t] || win["r" + t] || win["mozR" + t]
-        || win["msR" + t] || function(fn) { setTimeout(fn, 60) }
-}(window, "requestAnimationFrame");
-
-if (!Date.now) {
-    Date.now = function now() {
-        return new Date().getTime();
-    };
-}
-
-//taken from http://www.sitepoint.com/simple-animations-using-requestanimationframe/
-function animate(duration, stepFunction, success) {
-    var end = Date.now() + duration;
-    var step = function() {
-
-        var current = Date.now();
-        var remaining = end - current;
-
-        if(remaining < 16) {
-            stepFunction(1);
-            success('success');
-            return;
-
-        } else {
-            var rate = 1 - remaining/duration;
-            stepFunction(rate);
-        }
-
-        _requestAnimationFrame(step);
-    }
-    step();
-}
 
 module.exports = ScrollView;
