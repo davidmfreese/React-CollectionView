@@ -8,10 +8,11 @@ var CollectionViewDelegate = require('./CollectionViewDelegate');
 var CollectionViewLayout = require('./Layout/CollectionViewLayout');
 var CollectionViewLayoutAttributes = require('./Layout/CollectionViewLayoutAttributes');
 var ScrollViewDelegate = require('./ScrollView/ScrollViewDelegate');
+var ScrollView = require('./ScrollView/ScrollView.jsx');
 
 var Models = require('./Model/Models');
 var Enums = require('./Enums/Enums');
-var props = t.struct({
+var collectionViewProps = t.struct({
     collectionViewDatasource: CollectionViewDatasource.Protocol,
     frame: Models.Rect,
     collectionViewDelegate: CollectionViewDelegate.Protocol,
@@ -49,6 +50,14 @@ var props = t.struct({
 
 }, 'CollectionViewProps');
 
+var scrollDirType = {
+    None: 0,
+    Left: 1,
+    Up: 2,
+    Right: 3,
+    Down: 4
+}
+
 function getQueryParams(qs) {
     qs = qs.split("+").join(" ");
 
@@ -63,58 +72,17 @@ function getQueryParams(qs) {
 }
 
 var params = getQueryParams(document.location.search);
-
-var scrollInterval = 100;
 var debugScroll = params && params.debugScroll ? params.debugScroll[0]: false;
 
-var _requestAnimationFrame = function(win, t) {
-    return win["webkitR" + t] || win["r" + t] || win["mozR" + t]
-        || win["msR" + t] || function(fn) { setTimeout(fn, 60) }
-}(window, "requestAnimationFrame");
-
-if (!Date.now) {
-    Date.now = function now() {
-        return new Date().getTime();
-    };
-}
-
-//taken from http://www.sitepoint.com/simple-animations-using-requestanimationframe/
-function animate(duration, stepFunction, success) {
-    var end = Date.now() + duration;
-    var step = function() {
-
-        var current = Date.now();
-        var remaining = end - current;
-
-        if(remaining < 16) {
-            stepFunction(1);
-            success('success');
-            return;
-
-        } else {
-            var rate = 1 - remaining/duration;
-            stepFunction(rate);
-        }
-
-        _requestAnimationFrame(step);
-    }
-    step();
-}
-
 var CollectionView = React.createClass({
-    propTypes: tReact.react.toPropTypes(props),
+    propTypes: tReact.react.toPropTypes(collectionViewProps),
     getInitialState: function() {
         return {
-            scrollPosition: Models.Geometry.getPointZero(),
             collectionViewContentSize: Models.Geometry.getSizeZero(),
-            scrollTimeout: undefined,
-            isScrolling: false,
             currentLoadedRect: Models.Geometry.getRectZero(),
             defaultBlockSize: Models.Geometry.getSizeZero(),
             frame: Models.Geometry.getRectZero(),
-            layoutAttributes: [],
-            isAnimating: false,
-            animateScrollPosition: Models.Geometry.getPointZero()
+            layoutAttributes: []
         };
     },
     componentDidMount: function() {
@@ -151,15 +119,12 @@ var CollectionView = React.createClass({
                 defaultBlockSize: defaultBlockSize,
                 currentLoadedRect: currentLoadedRect,
                 layoutAttributes: layoutAttributes,
-                scrollPosition: Models.Geometry.getPointZero(),
                 collectionViewContentSize: contentSize});
             self.setStateFromScrollPosition(Models.Geometry.getPointZero(), true);
             console.log('prepareLayout completed');
         });
     },
     shouldComponentUpdate: function(nextProps, nextState) {
-        var newScrollPosition = nextState.scrollPosition;
-        var oldScrollPosition = this.state.scrollPosition;
         var newLayouts = nextState.layoutAttributes;
         var oldLayouts = this.state.layoutAttributes;
         var newLoadedRect = nextState.currentLoadedRect;
@@ -221,40 +186,13 @@ var CollectionView = React.createClass({
             shouldUpdate = true;
         } else if(oldLoadedRect.origin.y != newLoadedRect.origin.y) {
             shouldUpdate = true;
-        } else if(oldIsScrolling && !newIsScrolling) {
-            //shouldUpdate = true;
-        } else if(nextState.isAnimating && !this.state.isAnimating) {
-            var that = this;
-
-            var domElement = that.refs["scrollable"].getDOMNode();
-            var currentTop = domElement.scrollTop;
-            var newTop = nextState.animateScrollPosition.y;
-
-            var currentLeft = domElement.scrollLeft;
-            var newLeft = nextState.animateScrollPosition.x;
-
-            var stepFunction = function(rate) {
-                domElement.scrollTop = currentTop - rate*(currentTop - newTop);
-                domElement.scrollLeft = currentLeft - rate*(currentLeft - newLeft);
-            };
-            animate(200, stepFunction, function(success) {
-                setTimeout(function() {
-                    that.setState({
-                        isAnimating: false
-                    });
-                }, 150);
-            });
+        } else if(this.refs["scrollView"].state.animatingToScrollPosition) {
+            shouldUpdate = false;
         }
 
-        if(debugScroll) {
-            console.log('new scrollPosition: ' + JSON.stringify(newScrollPosition, null) + ", old scrollPosition: " + JSON.stringify(oldScrollPosition, null));
-            console.log('will update: ' + shouldUpdate);
-        }
         return shouldUpdate;
     },
     render: function() {
-        var frame = this.props.frame;
-
         var children = [];
         var layoutAttributes = this.state.layoutAttributes;
         for(var i = 0; i < layoutAttributes.length; i++) {
@@ -278,37 +216,75 @@ var CollectionView = React.createClass({
         if(children.length == 0) {
             children.push(<div></div>);
         }
-
-        var scrollableStyle = {
-            height: frame.size.height,
-            width: frame.size.width,
-            overflowX: 'scroll',
-            overflowY: 'scroll',
-            position: 'absolute'
-        };
-
-        var clearStyle = {
-            clear:"both"
-        };
-
-        var contentSize = this.state.collectionViewContentSize;
-        if(!contentSize) {
-            contentSize = new Models.Size({height:0, width:0});
-        }
-        var wrapperStyle = {
-            width:contentSize.width,
-            height:contentSize.height
-        };
+        var that = this;
         return (
-        <div className={this.props.className ? this.props.className + '-container' : 'scroll-container'}
-            ref="scrollable"
-            style={scrollableStyle}
-            onScroll={this.onScroll}>
-            <div ref="smoothScrollingWrapper" style={wrapperStyle}>
-                {children}
-            </div>
-        </div>
+        <ScrollView
+            ref="scrollView"
+            content={children}
+            scrollViewDelegate={that}
+            frame={this.props.frame}
+            contentSize={this.state.collectionViewContentSize}
+            scrollTimeout={100}
+            shouldUpdate={true}
+            paging={false}
+            debugScroll={debugScroll}
+        />
         )
+    },
+    //ScrollViewDelegate
+    scrollViewDidScroll: function(scrollPosition) {
+        if(this.props.scrollViewDelegate != null && this.props.scrollViewDelegate.scrollViewDidScroll != null) {
+            this.props.scrollViewDelegate.scrollViewDidScroll(scrollPosition);
+        }
+        this.handleScroll(scrollPosition);
+    },
+    scrollViewDidScrollToTop: function(scrollView) {
+        if(this.props.scrollViewDelegate && this.props.scrollViewDelegate.scrollViewDidScrollToTop) {
+            this.props.scrollViewDelegate.scrollViewDidScrollToTop(scrollView);
+        }
+    },
+    scrollViewDidEndScrollingAnimation: function(scrollView) {
+        var scrollPosition = this.refs["scrollView"].state.scrollPosition;
+        if(this.props.scrollViewDelegate && this.props.scrollViewDelegate.scrollViewDidEndScrollingAnimation) {
+            this.props.scrollViewDelegate.scrollViewDidEndScrollingAnimation(scrollView);
+        }
+
+        this.setStateFromScrollPosition(scrollPosition, true);
+    },
+    scrollViewDidEndDecelerating: function(scrollView) {
+        if(this.props.scrollViewDelegate && this.props.scrollViewDelegate.scrollViewDidEndDecelerating) {
+            this.props.scrollViewDelegate.scrollViewDidEndDecelerating(scrollView);
+        }
+
+        var scrollPosition = scrollView.state.scrollPosition;
+        var collectionViewLayout = this.props.collectionViewLayout;
+        if(collectionViewLayout.targetContentOffsetForProposedContentOffset) {
+            var contentOffset = collectionViewLayout.targetContentOffsetForProposedContentOffset(scrollPosition);
+            if(contentOffset && (contentOffset.x != scrollPosition.x || contentOffset.y != scrollPosition.y)) {
+                scrollView.scrollTo(contentOffset, true);
+            }
+        }
+        //var contentOffset = new Models.Point({x: scrollPosition.x, y: scrollPosition.y - 200}); that.scrollTo(contentOffset, true);
+    },
+
+    handleScroll: function(scrollPosition) {
+        this.setStateFromScrollPosition(scrollPosition);
+    },
+    setStateFromScrollPosition: function(scrollPosition, force) {
+        var newRect = this.getRectForScrollPosition(scrollPosition);
+        var previousLoadedRect = this.state.currentLoadedRect;
+        var previousScrollPosition = this.state.scrollPosition;
+        var scrollDirections = this.refs["scrollView"].state.scrollDirections;
+        var redraw = this.shouldRedrawFromScrolling(scrollDirections, scrollPosition, previousLoadedRect, newRect);
+        if(redraw || force) {
+            var layoutAttributes = this.props.collectionViewLayout.layoutAttributesForElementsInRect(newRect);
+            var collectionViewContentSize = this.props.collectionViewLayout.getCollectionViewContentSize(null);
+            this.setState({
+                currentLoadedRect: newRect,
+                layoutAttributes: layoutAttributes,
+                collectionViewContentSize: collectionViewContentSize
+            });
+        }
     },
     getRectForScrollPosition: function(scrollPosition, overrideDefaultBlockSize) {
         var defaultBlockSize = overrideDefaultBlockSize;
@@ -339,109 +315,26 @@ var CollectionView = React.createClass({
 
         return rect;
     },
-    shouldRedrawFromScrolling: function(previousScrollPosition, newScrollPosition, previousLoadedRect, newLoadedRect) {
+    shouldRedrawFromScrolling: function(scrollDirections, scrollPosition, previousLoadedRect, newLoadedRect) {
         var frame = this.props.frame;
         var preloadPageCount = this.getPreloadPageCount();
-
-        var isScrollUp = newScrollPosition.y < previousScrollPosition.y;
-        var isScrollDown = newScrollPosition.y > previousScrollPosition.y;
-        var isScrollLeft = newScrollPosition.x < previousScrollPosition.x;
-        var isScrollRight = newScrollPosition.x > previousScrollPosition.x;
         var scrollUpThreshold = previousLoadedRect.origin.y + frame.size.height*preloadPageCount;
         var scrollDownThreshold = Models.Geometry.rectGetMaxY(previousLoadedRect) - frame.size.height*preloadPageCount;
         var scrollLeftThreshold = previousLoadedRect.origin.x + frame.size.width;
         var scrollRightThreshold = Models.Geometry.rectGetMaxX(previousLoadedRect) - frame.size.width*preloadPageCount;
 
         var redraw = false;
-        if(isScrollUp && newScrollPosition.y < scrollUpThreshold) {
+        if(scrollDirections.indexOf(scrollDirType.Up) != -1 && scrollPosition.y < scrollUpThreshold) {
             redraw = true;
-        } else if(isScrollDown && newScrollPosition.y > scrollDownThreshold) {
+        } else if(scrollDirections.indexOf(scrollDirType.Down) != -1  && scrollPosition.y > scrollDownThreshold) {
             redraw = true;
-        } else if(isScrollLeft && newScrollPosition.x < scrollLeftThreshold) {
+        } else if(scrollDirections.indexOf(scrollDirType.Left) != -1  && scrollPosition.x < scrollLeftThreshold) {
             redraw = true;
-        } else if(isScrollRight && newScrollPosition.x > scrollRightThreshold) {
+        } else if(scrollDirections.indexOf(scrollDirType.Right) != -1  && scrollPosition.x > scrollRightThreshold) {
             redraw = true;
         }
 
         return redraw;
-    },
-    onScroll: function(e) {
-        if(this.state.isAnimating) {
-            return;
-        }
-        var scrollPosition = new Models.Point({x: e.target.scrollLeft, y: e.target.scrollTop});
-        if(this.props.scrollViewDelegate != null && this.props.scrollViewDelegate.scrollViewDidScroll != null) {
-            this.props.scrollViewDelegate.scrollViewDidScroll(scrollPosition);
-        }
-        this.handleScroll(scrollPosition);
-    },
-    handleScroll: function(scrollPosition) {
-        var that = this;
-        this.manageScrollTimeouts();
-        this.setStateFromScrollPosition(scrollPosition);
-    },
-    manageScrollTimeouts: function() {
-        if (this.state.scrollTimeout) {
-            clearTimeout(this.state.scrollTimeout);
-        }
-
-        var that = this,
-            scrollTimeout = setTimeout(function() {
-                that.setState({
-                    isScrolling: false,
-                    scrollTimeout: undefined
-                })
-
-                var scrollPosition = that.state.scrollPosition;
-                var collectionViewLayout = that.props.collectionViewLayout;
-                if(collectionViewLayout.targetContentOffsetForProposedContentOffset) {
-                    var contentOffset = collectionViewLayout.targetContentOffsetForProposedContentOffset(scrollPosition);
-                    if(contentOffset && (contentOffset.x != scrollPosition.x || contentOffset.y != scrollPosition.y)) {
-                        that.scrollTo(contentOffset, false);
-                    }
-                }
-                //var contentOffset = new Models.Point({x: scrollPosition.x, y: scrollPosition.y - 200}); that.scrollTo(contentOffset, true);
-            }, scrollInterval);
-
-        this.setState({
-            isScrolling: true,
-            scrollTimeout: scrollTimeout
-        });
-    },
-    setStateFromScrollPosition: function(scrollPosition, force) {
-        if(debugScroll) {
-            this.indexPathsForVisibleItems();
-        }
-
-        var newRect = this.getRectForScrollPosition(scrollPosition);
-        var previousLoadedRect = this.state.currentLoadedRect;
-        var previousScrollPosition = this.state.scrollPosition;
-
-        var redraw = this.shouldRedrawFromScrolling(previousScrollPosition, scrollPosition, previousLoadedRect, newRect);
-        if(redraw || force) {
-            var layoutAttributes = this.props.collectionViewLayout.layoutAttributesForElementsInRect(newRect);
-            var collectionViewContentSize = this.props.collectionViewLayout.getCollectionViewContentSize(null);
-            this.setState({
-                scrollPosition: scrollPosition,
-                currentLoadedRect: newRect,
-                layoutAttributes: layoutAttributes,
-                collectionViewContentSize: collectionViewContentSize
-            });
-        } else { //just update scroll position
-            this.setState({
-                scrollPosition: scrollPosition
-            });
-        }
-    },
-    setStateForRect: function(rect) {
-        var newRect = rect;
-        var layoutAttributes = this.props.collectionViewLayout.layoutAttributesForElementsInRect(rect);
-        var collectionViewContentSize = this.props.collectionViewLayout.getCollectionViewContentSize(null);
-        this.setState({
-            currentLoadedRect: newRect,
-            layoutAttributes: layoutAttributes,
-            collectionViewContentSize: collectionViewContentSize
-        });
     },
     getPreloadPageCount: function() {
         var preloadPageCount = this.props.preloadPageCount;
@@ -450,16 +343,6 @@ var CollectionView = React.createClass({
         }
 
         return preloadPageCount;
-    },
-    scrollTo: function(scrollPosition, animated) {
-        if(this.state.isAnimating) {
-            return;
-        }
-
-        this.setState({
-            isAnimating: true,
-            animateScrollPosition: scrollPosition
-        });
     },
     indexPathsForVisibleItems: function() {
         var currentLayoutAttributes = this.state.layoutAttributes;
