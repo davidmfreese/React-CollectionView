@@ -9,7 +9,7 @@
 * Vertical Flowlayout with new items inserted at top when view is scrolled to top
 * Vertical Flowlayout using random images from the web.  Resizing the browser will invalidate layout, adjust cell sizes and reset scroll to top
 * Horizontal Flowlayout using random images from the web.  The scroll viewport matches the image size. 
-  * todo - snap to current index path after user stops scrolling
+  * done - added paging functionality.  
   * todo - add swiping (might do this as native cordova plugin)
 * Vertical Flowlayout (BIG data) with 1,000,000 data items.  Fits browser width/height and scrolls forever.  Good luck getting to the bottom (phantomjs cheat anyone)
   * todo - add transitions 
@@ -17,5 +17,3 @@
   * todo - add transitions 
 
 **WARNING** - This project is young and being developed in short iterations.  If you are interested in the project please fork.  There will be many breaking changes in the short term.  
-
-If you are interested in contributing or have questions/issues email me at <davidmfreese@gmail.com>
