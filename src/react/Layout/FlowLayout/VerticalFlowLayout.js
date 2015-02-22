@@ -39,7 +39,7 @@ function creationSectionLayoutDetails(indexPath, numberItemsInSection, startY, o
     var numberItems = numberItemsInSection;
     var availableWidth = _constrainedHeightOrWidth - opts.sectionInsets.left - opts.sectionInsets.right;
     var numberOfColumns = Math.floor((availableWidth - opts.itemSize.width) / (opts.itemSize.width + opts.minimumInteritemSpacing)) + 1;
-    var actualInteritemSpacing = Math.floor((availableWidth - opts.itemSize.width * numberOfColumns) / (numberOfColumns - 1));
+    var actualInteritemSpacing = Math.floor((availableWidth - opts.itemSize.width * numberOfColumns) / Math.max(1, (numberOfColumns - 1)));
     var itemTotalWidth = opts.itemSize.width;
     var rowHeight = opts.itemSize.height;
     var numberOfTotalRows = Math.ceil(numberItems / numberOfColumns);
