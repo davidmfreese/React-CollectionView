@@ -16,6 +16,6 @@ utils.getQueryParams = getQueryParams;
 utils.getQueryParamValue = function(queryStrings, queryParamToLookFor) {
     var qs = getQueryParams(queryStrings);
     return qs[queryParamToLookFor] ? qs[queryParamToLookFor] : false;
-}
+};
 
 module.exports = utils;

@@ -53,7 +53,7 @@ function animateScroll(duration, easingType, stepFunction, success) {
         }
 
         _requestAnimationFrame(step);
-    }
+    };
     step();
 }
 

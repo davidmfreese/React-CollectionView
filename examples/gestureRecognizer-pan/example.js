@@ -28,12 +28,12 @@ var Tappable = React.createClass({
             position: "absolute",
             top: this.state.top,
             left: this.state.left
-        }
+        };
 
         var containerStyle = {
             height: window.innerHeight,
             width: window.innerWidth
-        }
+        };
 
         var draggable = React.createElement('div', {style: draggableStyle, ref: "draggable"});
         return React.createElement('div', { style: containerStyle}, draggable);
@@ -68,6 +68,6 @@ var Tappable = React.createClass({
         }
 
     }
-})
+});
 var tappable = React.createElement(Tappable, {});
 React.render(tappable, document.getElementById('reactContainer'));

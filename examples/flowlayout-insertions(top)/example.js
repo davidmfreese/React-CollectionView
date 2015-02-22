@@ -17,7 +17,7 @@ function addData() {
     datasource.unshift("Item: " + i);
 }
 
-var currentIndex
+var currentIndex;
 for(var i = 1; i <= 10000; i++) {
     addData();
 }
@@ -119,4 +119,4 @@ function create(invalidate) {
 create(false);
 setTimeout(function() {
     loadNext();
-}, 250)
+}, 250);

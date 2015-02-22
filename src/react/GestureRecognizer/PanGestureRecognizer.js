@@ -1,5 +1,5 @@
 var t = require('tcomb');
-var _ = require('underscore')
+var _ = require('underscore');
 
 var Models = require('../Model/Models');
 var GestureRecognizer = require('./GestureRecognizer');

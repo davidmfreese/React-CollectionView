@@ -83,8 +83,7 @@ function getSections(rect, sectionsLayoutDetails) {
         }
     }
     return sections;
-};
-
+}
 function layoutAttributesForItemAtIndexPath(indexPath, sectionLayoutInfo, itemSize) {
     Models.IndexPath.is(indexPath);
     HorizontalSectionLayoutDetails.is(sectionLayoutInfo);
@@ -138,7 +137,7 @@ function layoutAttributesForSupplementaryView(indexPath, sectionLayoutInfo, kind
             "hidden": false
         });
     } else if(kind == "footer") {
-        var x = sectionLayoutInfo.Frame.origin.x + sectionLayoutInfo.Frame.size.width - sectionLayoutInfo.FooterReferenceSize.width
+        var x = sectionLayoutInfo.Frame.origin.x + sectionLayoutInfo.Frame.size.width - sectionLayoutInfo.FooterReferenceSize.width;
         var frame = new Models.Rect({
             origin: new Models.Point({x: x, y: 0}),
             size: new Models.Size({height: sectionLayoutInfo.FooterReferenceSize.height, width: sectionLayoutInfo.FooterReferenceSize.width})
@@ -166,4 +165,4 @@ module.exports = {
     GetSectionsForRect: getSections,
     LayoutAttributesForItemAtIndexPath: layoutAttributesForItemAtIndexPath,
     LayoutAttributesForSupplementaryView: layoutAttributesForSupplementaryView
-}
+};

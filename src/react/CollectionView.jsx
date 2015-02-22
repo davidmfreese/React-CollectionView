@@ -60,7 +60,7 @@ var scrollDirType = {
     Up: 2,
     Right: 3,
     Down: 4
-}
+};
 
 var debugScroll = Utils.Query.getQueryParamValue(document.location.search, 'debugScroll');
 

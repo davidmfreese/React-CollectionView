@@ -12,7 +12,7 @@ var ReactGestureRecognizerMixin = {
     componentDidMount: function() {
         var node = this.getDOMNode();
         
-        node.addEventListener('mousedown', this.gestureRecognizerOnMouseDown)
+        node.addEventListener('mousedown', this.gestureRecognizerOnMouseDown);
         document.addEventListener('mousemove', this.gestureRecognizerOnMouseMove);
         document.addEventListener('mouseup', this.gestureRecognizerOnMouseUp);
 

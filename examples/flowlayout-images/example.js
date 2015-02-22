@@ -10,7 +10,7 @@ function throttle() {
 
 window.onresize = function() {
     throttle();
-}
+};
 
 //Data
 var datasource = [];

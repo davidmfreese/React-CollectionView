@@ -21,7 +21,7 @@ function circleCellFactory() {
         "getContentView": function () {
 
             var Circle = React.createElement('div', {className:"circleCell"});
-            var Div = React.createElement('div', {style: _style}, Circle)
+            var Div = React.createElement('div', {style: _style}, Circle);
             return Div;
         },
         "setData": function (data) {

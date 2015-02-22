@@ -43,6 +43,6 @@ var Tappable = React.createClass({
             });
         }
     }
-})
+});
 var tappable = React.createElement(Tappable, {});
 React.render(tappable, document.getElementById('reactContainer'));

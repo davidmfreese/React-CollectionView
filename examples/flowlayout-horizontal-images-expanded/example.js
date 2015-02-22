@@ -140,7 +140,7 @@ flowLayout.targetContentOffsetForProposedContentOffset = function(point) {
                 width:collectionViewSize.width,
                 height:collectionViewSize.height
             })
-        })
+        });
         var attributesInRect = flowLayout.layoutAttributesForElementsInRect(rect);
         if(attributesInRect && attributesInRect.length > 0) {
 

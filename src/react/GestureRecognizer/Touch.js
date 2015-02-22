@@ -12,13 +12,11 @@ function touchFactory(identifier, touchLocation, target) {
         magnitude: function() {
             return Math.sqrt(this.x*this.x + this.y*this.y);
         }
-    }
-    this.velocityX = 0;
-    this.velocityY = 0;
+    };
 
     this.getTouchDuration = function() {
         return (new Date()).getTime() - this.touchStart;
-    }
+    };
 
     this.onMoved = function(newLocation) {
         if(!newLocation) {
@@ -31,7 +29,7 @@ function touchFactory(identifier, touchLocation, target) {
         this.velocity.x = deltaX/deltaT;
         this.velocity.y = deltaY/deltaT;
         this.lastLocation = newLocation;
-    }
+    };
     this.onEnded = function(endLocation) {
         this.lastLocation = endLocation;
         this.touchEndTime = Date.now();

@@ -83,8 +83,7 @@ function getSections(rect, sectionsLayoutDetails) {
     }
 
     return sections;
-};
-
+}
 function layoutAttributesForItemAtIndexPath(indexPath, sectionLayoutInfo, itemSize) {
     Models.IndexPath.is(indexPath);
     VerticalSectionLayoutDetails.is(sectionLayoutInfo);
@@ -113,8 +112,7 @@ function layoutAttributesForItemAtIndexPath(indexPath, sectionLayoutInfo, itemSi
     });
 
     return layoutAttributes;
-};
-
+}
 function layoutAttributesForSupplementaryView(indexPath, sectionLayoutInfo, kind) {
     var layoutAttributes = null;
 
@@ -163,4 +161,4 @@ module.exports = {
     GetSectionsForRect: getSections,
     LayoutAttributesForItemAtIndexPath: layoutAttributesForItemAtIndexPath,
     LayoutAttributesForSupplementaryView: layoutAttributesForSupplementaryView
-}
+};
