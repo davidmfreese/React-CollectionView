@@ -132,7 +132,7 @@ var CollectionView = React.createClass({
             var self = this;
             console.log('preparingLayout');
             nextProps.collectionViewLayout.prepareLayout.call(this, function (success) {
-                var scrollPostion = self.state.scrollPosition;
+                var scrollPostion = self.refs["scrollView"].state.scrollPosition;
 
                 var resetScroll = nextProps.resetScroll;
                 if(resetScroll) {
@@ -268,7 +268,6 @@ var CollectionView = React.createClass({
     setStateFromScrollPosition: function(scrollPosition, force) {
         var newRect = this.getRectForScrollPosition(scrollPosition);
         var previousLoadedRect = this.state.currentLoadedRect;
-        var previousScrollPosition = this.state.scrollPosition;
         var scrollDirections = this.refs["scrollView"].state.scrollDirections;
         var redraw = this.shouldRedrawFromScrolling(scrollDirections, scrollPosition, previousLoadedRect, newRect);
         if(redraw || force) {
@@ -342,9 +341,10 @@ var CollectionView = React.createClass({
     indexPathsForVisibleItems: function() {
         var currentLayoutAttributes = this.state.layoutAttributes;
         var frame = this.props.frame;
+        var scrollPosition = this.refs["scrollView"].state.scrollPosition;
         var origin = new Models.Point({
-            x: this.state.scrollPosition.x,
-            y: this.state.scrollPosition.y
+            x: scrollPosition.x,
+            y: scrollPosition.y
         });
         var currentView = new Models.Rect({
             origin: origin,

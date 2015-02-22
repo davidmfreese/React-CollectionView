@@ -28,7 +28,7 @@ function loadMoreData(batchSize){
         clearInterval(loadMoreInterval);
         loadMoreInterval = null;
         invalidateLayout();
-    }, 1000);
+    }, 500);
 }
 
 var itemSize = new rCV.Models.Size({height:100, width:100});
@@ -74,7 +74,7 @@ function getProps() {
         }
     });
 
-    var infinityLoadMoreBuffer = collectionViewSize.height/2;
+    var infinityLoadMoreBuffer = collectionViewSize.height*1.5;
     var previousScrollPosition = new rCV.Models.Point({x: 0, y: 0});
     var scrollViewDelegate = new rCV.ScrollViewDelegate.Protocol({
         "scrollViewDidScroll": function (scrollPosition) {
@@ -85,6 +85,8 @@ function getProps() {
                     loadMoreData(33);
                 }
             }
+
+            previousScrollPosition = scrollPosition;
         }
     });
 
