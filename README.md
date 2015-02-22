@@ -24,4 +24,4 @@ Created an initial implementation for a React-Mixin based on UIGestureRecognizer
   * Tap gesture
   * Multiple gestures (combines Pan/Tap) and handles both on same object
 
-**WARNING** - This project is young and being developed in short iterations.  If you are interested in the project please fork.  There will be many breaking changes in the short term.  
+**WARNING** - This project is young and being developed in short iterations.  There will be many breaking changes in the short term.  
