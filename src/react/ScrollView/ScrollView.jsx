@@ -23,6 +23,9 @@ var scrollViewProps = t.struct({
     debugScroll: t.maybe(t.Bool)
 }, 'ScrollViewProps');
 
+var GestureRecognizerMixin = require('../GestureRecognizer/GestureRecognizerMixin');
+var PanGestureRecognizer = require('../GestureRecognizer/PanGestureRecognizer');
+
 var scrollDirType = {
     None: 0,
     Left: 1,
@@ -36,7 +39,9 @@ React.initializeTouchEvents(true);
 
 var debugEvents = Utils.Query.getQueryParamValue(document.location.search, 'debugEvents');
 var ScrollView = React.createClass({
+    mixins: [GestureRecognizerMixin],
     propTypes: tReact.react.toPropTypes(scrollViewProps),
+    scrollPositionOnMouseDown: undefined,
     getInitialState: function() {
         return {
             scrollPosition: Models.Geometry.getPointZero(),
@@ -47,9 +52,12 @@ var ScrollView = React.createClass({
             scrollDirections: [scrollDirType.None]
         };
     },
-    mouseDown: false,
-    mouseDownPosition: Models.Geometry.getPointZero(),
-    scrollPositionOnMouseDown: Models.Geometry.getPointZero(),
+    componentWillMount: function() {
+        this.gestureRecognizers = [];
+        var panGesture = PanGestureRecognizer();
+        panGesture.setActionForTarget(this.handlePanGesture, "ScrollView");
+        this.gestureRecognizers.push(panGesture);
+    },
     componentDidMount: function() {
         if (this.props.contentSize) {
             console.log('isTypeSafe<-->ContentSize: ' + Models.Size.is(this.props.contentSize));
@@ -102,110 +110,46 @@ var ScrollView = React.createClass({
             <div className={'scroll-container'}
                 ref="scrollable"
                 style={scrollableStyle}
-                onScroll={this.onScroll}
-
-                onTouchStartCapture={this.onTouchStart}
-                onTouchMoveCapture={this.onTouchMove}
-                onTouchCancelCapture={this.onTouchCancel}
-                onTouchEndCapture={this.onTouchEnd}
-                onDragStartCapture={this.onDragStart}
-                onMouseDown={this.onMouseDown}
-                onMouseMove={this.onMouseMove}
-                onMouseUp={this.onMouseUp}>
+                onScroll={this.onScroll}>
                 <div ref="smoothScrollingWrapper" style={wrapperStyle}>
                     {this.props.content}
                 </div>
             </div>
         )
     },
-    onTouchStart: function(e) {
+    handlePanGesture: function(gestureRecognizer) {
+        var state = gestureRecognizer.getState();
+        var touches = gestureRecognizer.getTouches();
+        var translation = gestureRecognizer.translation();
         if(debugEvents) {
-            console.log('touch start: ' + e.pageX + ', ' + e.pageY);
+            console.log("PanState: " + state + ", translation: " + translation.x + ", " + translation.y);
         }
-        e.preventDefault()
-    },
-    onTouchMove: function(e) {
-        if(debugEvents) {
-            //console.log('touch move: ' + e.pageX + ', ' + e.pageY);
-        }
-        e.preventDefault()
-    },
-    onTouchCancel: function(e) {
-        if(debugEvents) {
-            //console.log('touch cancel: ' + e.pageX + ', ' + e.pageY);
-        }
-        e.preventDefault()
-    },
-    onTouchEnd: function(e) {
-        if(debugEvents) {
-            //console.log('touch end: ' + e.pageX + ', ' + e.pageY);
-        }
-        e.preventDefault();
-    },
-    onDragStart: function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    },
-    onMouseDown: function(e) {
-        if (debugEvents) {
-            console.log('mouse down: ' + e.pageX + ', ' + e.pageY);
-        }
+        if(touches && touches.length == 1) {
+            if (state == "Began") {
+                this.scrollPositionOnMouseDown = new Models.Point({
+                    x: this.refs["scrollable"].getDOMNode().scrollLeft,
+                    y: this.refs["scrollable"].getDOMNode().scrollTop
 
-        this.mouseDown = true;
-        this.mouseDownPosition = new Models.Point({x: e.pageX, y: e.pageY});
-        this.scrollPositionOnMouseDown = new Models.Point({
-            x: this.refs["scrollable"].getDOMNode().scrollLeft,
-            y: this.refs["scrollable"].getDOMNode().scrollTop
-        });
+                });
+            } else if(state == "Changed" && this.scrollPositionOnMouseDown) {
 
-        if(this.props.paging) {
-            this.scrollTo(this.scrollPositionOnMouseDown, false);
-        }
-
-        e.preventDefault();
-    },
-    onMouseMove: function(e) {
-        if(this.mouseDown) {
-            if(debugEvents) {
-                console.log('mouse move: ' + e.pageX + ', ' + e.pageY);
-            }
-
-            var mouseDownOriginalPosition = this.mouseDownPosition;
-            var currentScrollPosition = this.scrollPositionOnMouseDown;
-            var deltaX = mouseDownOriginalPosition.x - e.pageX;
-            var deltaY = mouseDownOriginalPosition.y - e.pageY;
-
-            var x = 0;
-            var y = 0;
-            if(this.props.pagingDirection === "ScrollDirectionTypeVertical") {
-                y =  currentScrollPosition.y + deltaY;
-            } else { //horizontal
-                x = currentScrollPosition.x + deltaX;
-            }
-
-            if(this.props.paging) { //only scroll if paging is enabled
+                var x = this.scrollPositionOnMouseDown.x + translation.x;
+                var y = this.scrollPositionOnMouseDown.y + translation.y;
                 this.scrollTo(new Models.Point({
                     x: x,
                     y: y
-                }), false);
+                }), false)
+            } else if(state == "Ended") {
+                if (this.props.paging) {
+                    this.handlePaging(this.state.scrollPosition);
+                }
+
+            } else {
+                this.scrollPositionOnMouseDown = undefined;
             }
         }
-        e.preventDefault();
-    },
-    onMouseUp: function(e) {
-        var that = this;
-        if (debugEvents) {
-            console.log('mouse up: ' + e.pageX + ', ' + e.pageY);
-        }
 
-        this.mouseDown = false;
-        this.mouseDownPosition = Models.Geometry.getPointZero();
-        this.scrollPositionOnMouseDown = Models.Geometry.getPointZero();
-        if (this.props.paging) {
-            that.handlePaging(this.state.scrollPosition);
-        }
 
-        e.preventDefault();
     },
     onScroll: function(e) {
         if(this.state.animatingToScrollPosition || this.state.mouseDown) {

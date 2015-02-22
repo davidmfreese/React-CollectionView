@@ -27,7 +27,14 @@ var exports = {
     Enums: require('./src/react/Enums/Enums'),
     React: require('react/addons'),
 
-    CollectionViewFlowLayout: CollectionViewFlowLayout
+    CollectionViewFlowLayout: CollectionViewFlowLayout,
+
+    GestureRecognizer: require('./src/react/GestureRecognizer/GestureRecognizer'),
+    GestureTouch: require('./src/react/GestureRecognizer/Touch'),
+    GestureRecognizerMixin: require('./src/react/GestureRecognizer/GestureRecognizerMixin'),
+
+    PanGestureRecognizer: require('./src/react/GestureRecognizer/PanGestureRecognizer'),
+    TapGestureRecognizer: require('./src/react/GestureRecognizer/TapGestureRecognizer')
 };
 
 module.exports = exports;

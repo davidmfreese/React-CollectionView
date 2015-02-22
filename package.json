@@ -21,6 +21,7 @@
     "tcomb": "^0.4.0",
     "tcomb-react": "^0.2.0",
     "tcomb-validation": "^0.3.0",
+    "underscore": "^1.8.1",
     "velocity-animate": "^1.2.2"
   },
   "devDependencies": {
