@@ -136,8 +136,6 @@ var CollectionView = React.createClass({
 
                 var resetScroll = nextProps.resetScroll;
                 if(resetScroll) {
-                    self.refs["scrollable"].getDOMNode().scrollTop = 0;
-                    self.refs["scrollable"].getDOMNode().scrollLeft = 0;
                     scrollPostion = Models.Geometry.getPointZero();
                     nextProps.resetScroll = false;
                 }
