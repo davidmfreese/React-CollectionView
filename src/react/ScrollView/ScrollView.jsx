@@ -133,8 +133,8 @@ var ScrollView = React.createClass({
                 });
             } else if(state == "Changed" && this.scrollPositionOnMouseDown) {
 
-                var x = this.scrollPositionOnMouseDown.x + translation.x;
-                var y = this.scrollPositionOnMouseDown.y + translation.y;
+                var x = this.scrollPositionOnMouseDown.x - translation.x;
+                var y = this.scrollPositionOnMouseDown.y - translation.y;
                 this.scrollTo(new Models.Point({
                     x: x,
                     y: y

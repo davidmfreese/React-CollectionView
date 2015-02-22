@@ -53,9 +53,9 @@ var Tappable = React.createClass({
                     y: domElement.offsetTop
                 });
             } else if(state == "Changed" && this.scrollPositionOnMouseDown) {
-
-                var x = this.scrollPositionOnMouseDown.x - translation.x;
-                var y = this.scrollPositionOnMouseDown.y - translation.y;
+                console.log("current pan velocityX: " + touches[0].velocity.x + ", velocityY: " + touches[0].velocity.y);
+                var x = this.scrollPositionOnMouseDown.x + translation.x;
+                var y = this.scrollPositionOnMouseDown.y + translation.y;
                 this.setState({
                     top: y,
                     left: x

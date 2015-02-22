@@ -49,8 +49,8 @@ function TapGestureRecognizerFactory() {
             var translation = Models.Geometry.getPointZero();
             if (touches && touches.length == 1) {
                 var touch = touches[0];
-                var deltaX = touch.startLocation.x - touch.lastLocation.x;
-                var deltaY = touch.startLocation.y - touch.lastLocation.y;
+                var deltaX = touch.lastLocation.x - touch.startLocation.x;
+                var deltaY = touch.lastLocation.y - touch.startLocation.y;
 
                 translation = new Models.Point({
                     x: deltaX,
