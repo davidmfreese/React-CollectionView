@@ -86,8 +86,8 @@ function SimpleCellFactory(data, indexPath) {
 
 function reload(invalidate) {
     var windowWidth = window.innerWidth;
-    var numberOfRows = 6;
-    var width = Math.floor(windowWidth/6);
+    var numberOfRows = 4;
+    var width = Math.floor(windowWidth/numberOfRows);
 
     var collectionViewSize = new Models.Size({height: window.innerHeight, width: windowWidth});
     var insets = new EdgeInsets({top:0, left:0, bottom:0, right:0});

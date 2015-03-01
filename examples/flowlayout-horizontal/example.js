@@ -10,7 +10,7 @@ var cellSize = new Models.Size({height: cellHeight, width: cellHeight});
 
 //Data
 var datasource = [];
-for(var i = 1; i <= 10000; i++) {
+for(var i = 1; i <= 1000000; i++) {
     datasource.push("Item: " + i);
 }
 

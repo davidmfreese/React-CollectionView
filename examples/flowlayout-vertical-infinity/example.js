@@ -14,7 +14,6 @@ var allData = [];
 for(var i = 1; i <= 10000; i++) {
     allData.push("Item: " + i);
 }
-
 var datasource = allData.slice(0, 99);
 
 var loadMoreInterval = null;
