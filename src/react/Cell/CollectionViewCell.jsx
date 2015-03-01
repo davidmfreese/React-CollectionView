@@ -1,8 +1,7 @@
-var t = require('tcomb');
+var t = require('tcomb-validation');
 var tReact = require('tcomb-react');
 var React = require('react');
 
-var IndexPath = require('../Model/IndexPath');
 var CollectionViewLayoutAttributes = require('../Layout/CollectionViewLayoutAttributes');
 
 var CollectionViewCellProtocol = t.struct({

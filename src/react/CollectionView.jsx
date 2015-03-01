@@ -1,6 +1,6 @@
 /** @jsx React.DOM */
 var React = require('react/addons');
-var t = require('tcomb');
+var t = require('tcomb-validation');
 var tReact = require('tcomb-react');
 
 var CollectionViewDatasource = require('./Datasource/CollectionViewDatasource');
@@ -8,15 +8,15 @@ var CollectionViewDelegate = require('./CollectionViewDelegate');
 var CollectionViewLayout = require('./Layout/CollectionViewLayout');
 var ScrollViewDelegate = require('./ScrollView/ScrollViewDelegate');
 var ScrollView = require('./ScrollView/ScrollView.jsx');
-
-var Models = require('./Model/Models');
 var Enums = require('./Enums/Enums');
-
 var Utils = require('./Utils/Utils');
+
+var Geometry = require('JSCoreGraphics').CoreGraphics.Geometry;
+var Foundation = require('JSCoreGraphics').Foundation;
 
 var collectionViewProps = t.struct({
     collectionViewDatasource: CollectionViewDatasource.Protocol,
-    frame: Models.Rect,
+    frame: Geometry.DataTypes.Rect,
     collectionViewDelegate: CollectionViewDelegate.Protocol,
     collectionViewLayout: CollectionViewLayout.Protocol,
     scrollViewDelegate: t.maybe(ScrollViewDelegate.Protocol),
@@ -26,27 +26,27 @@ var collectionViewProps = t.struct({
     paging: t.maybe(t.Bool),
     pagingDirection: t.maybe(Enums.ScrollDirectionType),
 
-    insertItemsAtIndexPaths: t.maybe(t.list(Models.IndexPath)),
+    insertItemsAtIndexPaths: t.maybe(t.list(Foundation.DataTypes.IndexPath)),
     moveItemAtIndexPathToIndexPath: t.maybe(t.struct({
-        currentIndexPath: Models.IndexPath,
-        newIndexPath: Models.IndexPath
+        currentIndexPath: Foundation.DataTypes.IndexPath,
+        newIndexPath: Foundation.DataTypes.IndexPath
     })),
-    deleteItemsAtIndexPaths: t.maybe(t.list(Models.IndexPath)),
+    deleteItemsAtIndexPaths: t.maybe(t.list(Foundation.DataTypes.IndexPath)),
 
     allowsSelection: t.maybe(t.Bool),
     allowsMultipleSelection: t.maybe(t.Bool),
     selectItemAtIndexPath: t.maybe(t.struct({
-        indexPath: Models.IndexPath,
+        indexPath: Foundation.DataTypes.IndexPath,
         animated: t.Bool,
         scrollPositionType: Enums.ScrollPositionType
     })),
     deselectItemAtIndexPath: t.maybe(t.struct({
-        indexPath: Models.IndexPath,
+        indexPath: Foundation.DataTypes.IndexPath,
         animated: t.Bool
     })),
 
     scrollToItemAtIndexPath: t.maybe(t.struct({
-        indexPath: Models.IndexPath,
+        indexPath: Foundation.DataTypes.IndexPath,
         animated: t.Bool,
         scrollPositionType: Enums.ScrollPositionType
     }))
@@ -68,17 +68,17 @@ var CollectionView = React.createClass({
     propTypes: tReact.react.toPropTypes(collectionViewProps),
     getInitialState: function() {
         return {
-            collectionViewContentSize: Models.Geometry.getSizeZero(),
-            currentLoadedRect: Models.Geometry.getRectZero(),
-            defaultBlockSize: Models.Geometry.getSizeZero(),
-            frame: Models.Geometry.getRectZero(),
+            collectionViewContentSize: Geometry.Constants.sizeZero,
+            currentLoadedRect: Geometry.Constants.rectZero,
+            defaultBlockSize: Geometry.Constants.sizeZero,
+            frame: Geometry.Constants.rectZero,
             layoutAttributes: []
         };
     },
     componentDidMount: function() {
         console.log('isTypeSafe<-->CollectionViewDatasource: ' + CollectionViewDatasource.Protocol.is(this.props.collectionViewDatasource));
         if (this.props.frame) {
-            console.log('isTypeSafe<-->Frame: ' + Models.Rect.is(this.props.frame));
+            console.log('isTypeSafe<-->Frame: ' + Geometry.DataTypes.Rect.is(this.props.frame));
         }
         if (this.props.collectionViewDelegate) {
             console.log('isTypeSafe<-->CollectionViewDelegate: ' + CollectionViewDelegate.Protocol.is(this.props.collectionViewDelegate));
@@ -91,7 +91,7 @@ var CollectionView = React.createClass({
         }
 
         var defaultBlockSize = this.props.frame.size;
-        var currentLoadedRect = this.getRectForScrollPosition(Models.Geometry.getPointZero(), defaultBlockSize);
+        var currentLoadedRect = this.getRectForScrollPosition(Geometry.Constants.pointZero, defaultBlockSize);
         var layoutAttributes = this.props.collectionViewLayout.layoutAttributesForElementsInRect(currentLoadedRect);
 
         var self = this;
@@ -101,7 +101,7 @@ var CollectionView = React.createClass({
             if (contentSize && contentSize.height && contentSize.width) {
 
             } else {
-                contentSize = Models.Geometry.getSizeZero();
+                contentSize = Geometry.Constants.sizeZero;
             }
 
             self.setState({collectionViewContentSize: contentSize,
@@ -110,7 +110,7 @@ var CollectionView = React.createClass({
                 currentLoadedRect: currentLoadedRect,
                 layoutAttributes: layoutAttributes,
                 collectionViewContentSize: contentSize});
-            self.setStateFromScrollPosition(Models.Geometry.getPointZero(), true);
+            self.setStateFromScrollPosition(Geometry.Constants.pointZero, true);
             console.log('prepareLayout completed');
         });
     },
@@ -136,7 +136,7 @@ var CollectionView = React.createClass({
 
                 var resetScroll = nextProps.resetScroll;
                 if(resetScroll) {
-                    scrollPostion = Models.Geometry.getPointZero();
+                    scrollPostion = Geometry.Constants.pointZero;
                     nextProps.resetScroll = false;
                 }
                 var newRect = self.getRectForScrollPosition(scrollPostion);
@@ -164,7 +164,7 @@ var CollectionView = React.createClass({
             shouldUpdate = true;
         }else if (oldLayouts == null && newLayouts != null) {
             shouldUpdate = true;
-        } else if (Models.Geometry.isSizeZero(oldContentSize) || oldContentSize.width != newContentSize.width || oldContentSize.height != newContentSize.height) {
+        } else if (oldContentSize.width != newContentSize.width || oldContentSize.height != newContentSize.height) {
             shouldUpdate = true;
         } else if(newLayouts && newLayouts.length != oldLayouts.length) {
             shouldUpdate = true;
@@ -186,7 +186,6 @@ var CollectionView = React.createClass({
         for(var i = 0; i < layoutAttributes.length; i++) {
             var attributes = layoutAttributes[i];
             var category = attributes.representedElementCategory.call(this, null);
-            //console.log(category);
             if(category == "CollectionElementTypeSupplementaryView") {
                 var kind = attributes.representedElementKind.call(this, null);
                 var view = this.props.collectionViewDatasource.viewForSupplementaryElementOfKind.call(this, kind, attributes.indexPath);
@@ -220,7 +219,7 @@ var CollectionView = React.createClass({
         />
         )
     },
-    //ScrollViewDelegate
+
     scrollViewDidScroll: function(scrollPosition) {
         if(this.props.scrollViewDelegate != null && this.props.scrollViewDelegate.scrollViewDidScroll != null) {
             this.props.scrollViewDelegate.scrollViewDidScroll(scrollPosition);
@@ -257,7 +256,7 @@ var CollectionView = React.createClass({
                 scrollView.scrollTo(contentOffset, true);
             }
         }
-        //var contentOffset = new Models.Point({x: scrollPosition.x, y: scrollPosition.y - 200}); that.scrollTo(contentOffset, true);
+        //var contentOffset = new Geometry.DataTypes.Point({x: scrollPosition.x, y: scrollPosition.y - 200}); that.scrollTo(contentOffset, true);
     },
 
     handleScroll: function(scrollPosition) {
@@ -300,9 +299,9 @@ var CollectionView = React.createClass({
         }
         var width = Math.max(currentRight - currentX, 0);
 
-        var rect = new Models.Rect({
-            origin: new Models.Point({x: currentX, y: currentY}),
-            size: new Models.Size({width: width, height: height})
+        var rect = new Geometry.DataTypes.Rect({
+            origin: new Geometry.DataTypes.Point({x: currentX, y: currentY}),
+            size: new Geometry.DataTypes.Size({width: width, height: height})
         });
 
         return rect;
@@ -311,9 +310,9 @@ var CollectionView = React.createClass({
         var frame = this.props.frame;
         var preloadPageCount = this.getPreloadPageCount();
         var scrollUpThreshold = previousLoadedRect.origin.y + frame.size.height*preloadPageCount;
-        var scrollDownThreshold = Models.Geometry.rectGetMaxY(previousLoadedRect) - frame.size.height*preloadPageCount;
+        var scrollDownThreshold = Geometry.rectGetMaxY(previousLoadedRect) - frame.size.height*preloadPageCount;
         var scrollLeftThreshold = previousLoadedRect.origin.x + frame.size.width;
-        var scrollRightThreshold = Models.Geometry.rectGetMaxX(previousLoadedRect) - frame.size.width*preloadPageCount;
+        var scrollRightThreshold = Geometry.rectGetMaxX(previousLoadedRect) - frame.size.width*preloadPageCount;
 
         var redraw = false;
         if(scrollDirections.indexOf(scrollDirType.Up) != -1 && scrollPosition.y < scrollUpThreshold) {
@@ -340,11 +339,11 @@ var CollectionView = React.createClass({
         var currentLayoutAttributes = this.state.layoutAttributes;
         var frame = this.props.frame;
         var scrollPosition = this.refs["scrollView"].state.scrollPosition;
-        var origin = new Models.Point({
+        var origin = new Geometry.DataTypes.Point({
             x: scrollPosition.x,
             y: scrollPosition.y
         });
-        var currentView = new Models.Rect({
+        var currentView = new Geometry.DataTypes.Rect({
             origin: origin,
             size: frame.size
         });
@@ -352,9 +351,9 @@ var CollectionView = React.createClass({
         var indexPathsForVisibleItemsArray = [];
         for(var i = 0; i < currentLayoutAttributes.length; i++) {
             var attributes = currentLayoutAttributes[i];
-            if(Models.Geometry.rectIntersects(currentView, attributes.frame)) {
+            if(Geometry.rectIntersectsRect(currentView, attributes.frame)) {
                 indexPathsForVisibleItemsArray.push(attributes);
-            } else if(Models.Geometry.rectIntersects(attributes.frame, currentView)) {
+            } else if(Geometry.rectIntersectsRect(attributes.frame, currentView)) {
                 indexPathsForVisibleItemsArray.push(attributes);
             }
         }

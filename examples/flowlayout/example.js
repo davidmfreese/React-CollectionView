@@ -1,8 +1,10 @@
 var rCV = ReactCollectionView;
 var React = rCV.React;
+var Geometry = rCV.JSCoreGraphics.CoreGraphics.Geometry;
+var EdgeInsets = rCV.JSCoreGraphics.Kit.DataTypes.EdgeInsets;
 
-var collectionViewSize = new rCV.Models.Size({height: 500, width:360});
-var cellSize = new rCV.Models.Size({height: 100, width:100});
+var collectionViewSize = new Geometry.DataTypes.Size({height: 500, width:360});
+var cellSize = new Geometry.DataTypes.Size({height: 100, width:100});
 
 //Data
 var datasource = [];
@@ -60,8 +62,8 @@ var datasourceDelegate = new rCV.CollectionViewDatasource.Protocol({
     }
 });
 
-var itemSize = new rCV.Models.Size({height:120, width:120});
-var insets = new rCV.Models.EdgeInsets({top:10, left:10, bottom:10, right:10});
+var itemSize = new Geometry.DataTypes.Size({height:120, width:120});
+var insets = new EdgeInsets({top:10, left:10, bottom:10, right:10});
 var layoutDelegate = new rCV.CollectionViewLayoutDelegate.Protocol({
     numberItemsInSection: function(indexPath) {
         return datasource.length;
@@ -103,9 +105,9 @@ var flowLayoutOptions = {
 };
 var flowLayout = rCV.CollectionViewFlowLayout.Layout(layoutDelegate, flowLayoutOptions);
 
-var frame = new rCV.Models.Rect({
-    origin: new rCV.Models.Point({x:0, y:0}),
-    size: new rCV.Models.Size({height:500, width:collectionViewSize.width})
+var frame = new Geometry.DataTypes.Rect({
+    origin: new Geometry.DataTypes.Point({x:0, y:0}),
+    size: new Geometry.DataTypes.Size({height:500, width:collectionViewSize.width})
 });
 var props = {
     collectionViewDatasource: datasourceDelegate,

@@ -1,6 +1,8 @@
-var t = require('tcomb');
+var t = require('tcomb-validation');
 
-var Models = require('../../Model/Models');
+var Geometry = require('JSCoreGraphics').CoreGraphics.Geometry;
+var Foundation = require('JSCoreGraphics').Foundation;
+var Kit = require('JSCoreGraphics').Kit;
 var Enums = require('../../Enums/Enums');
 
 var FlowLayoutOptions = t.struct({
@@ -9,10 +11,10 @@ var FlowLayoutOptions = t.struct({
     height: t.Num,
     minimumLineSpacing: t.maybe(t.Num),
     minimumInteritemSpacing: t.maybe(t.Num),
-    sectionInsets: t.maybe(Models.EdgeInsets),
-    itemSize: t.maybe(Models.Size),
-    headerReferenceSize: t.maybe(Models.Size),
-    footerReferenceSize: t.maybe(Models.Size)
+    sectionInsets: t.maybe(Kit.DataTypes.EdgeInsets),
+    itemSize: t.maybe(Geometry.DataTypes.Size),
+    headerReferenceSize: t.maybe(Geometry.DataTypes.Size),
+    footerReferenceSize: t.maybe(Geometry.DataTypes.Size)
 },' FlowLayoutOptions');
 
 module.exports.Options = FlowLayoutOptions;
@@ -21,27 +23,27 @@ function sanitizeOptions(opts) {
     FlowLayoutOptions.is(opts);
 
     var _constrainedHeightOrWidth = 0;
-    var _itemSize = Models.Geometry.getSizeZero();
-    var _sectionInsets = Models.Geometry.getInsetsZero();
+    var _itemSize = Geometry.Constants.sizeZero;
+    var _sectionInsets = Kit.edgeInsetsZero;
     var _minInteritemSpacing = 0;
     var _minLineSpacing = 0;
-    var _headerReferenceSize = Models.Geometry.getSizeZero();
-    var _footerReferenceSize = Models.Geometry.getSizeZero();
+    var _headerReferenceSize = Geometry.Constants.sizeZero;
+    var _footerReferenceSize = Geometry.Constants.sizeZero;
     var _width = opts.width;
     var _height = opts.height;
 
     if(opts.flowDirection != "ScrollDirectionTypeVertical" && opts.flowDirection != "ScrollDirectionTypeHorizontal") {
         throw "Unsupported flow direction";
     }
-    if(!opts.itemSize || Models.Geometry.isSizeZero(opts.itemSize)) {
+    if(!opts.itemSize || Geometry.isSizeZero(opts.itemSize)) {
         throw "Non uniform item size is not implemented."
     }
     if(opts.itemSize) {
-        Models.Size.is(opts.itemSize);
+        Geometry.DataTypes.Size.is(opts.itemSize);
         _itemSize = opts.itemSize;
     }
     if(opts.sectionInsets) {
-        Models.EdgeInsets.is(opts.sectionInsets);
+        Kit.DataTypes.EdgeInsets.is(opts.sectionInsets);
         _sectionInsets = opts.sectionInsets;
     }
     if(opts.flowDirection == "ScrollDirectionTypeVertical") {
@@ -56,10 +58,10 @@ function sanitizeOptions(opts) {
     if(opts.minimumLineSpacing) {
         _minLineSpacing = opts.minimumLineSpacing;
     }
-    if(opts.headerReferenceSize && Models.Size.is(opts.headerReferenceSize)) {
+    if(opts.headerReferenceSize && Geometry.DataTypes.Size.is(opts.headerReferenceSize)) {
         _headerReferenceSize = opts.headerReferenceSize;
     }
-    if(opts.footerReferenceSize && Models.Size.is(opts.footerReferenceSize)) {
+    if(opts.footerReferenceSize && Geometry.DataTypes.Size.is(opts.footerReferenceSize)) {
         _footerReferenceSize = opts.footerReferenceSize;
     }
 

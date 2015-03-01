@@ -1,20 +1,18 @@
 var React = require('react/addons');
-var t = require('tcomb');
+var t = require('tcomb-validation');
 var tReact = require('tcomb-react');
-//var Velocity = require('velocity-animate');
+
 var CAAnimation = require("../Animations/CAAnimation");
-
 var ScrollViewDelegate = require('./ScrollViewDelegate');
-
-var Models = require('../Model/Models');
+var Geometry = require('JSCoreGraphics').CoreGraphics.Geometry;
 var Enums = require('../Enums/Enums');
 
 var Utils = require('../Utils/Utils');
 
 var scrollViewProps = t.struct({
     content: t.Arr,
-    frame: Models.Rect,
-    contentSize: Models.Size,
+    frame: Geometry.DataTypes.Rect,
+    contentSize: Geometry.DataTypes.Size,
     scrollViewDelegate: t.Obj,
     scrollTimeout: t.Num,
     shouldUpdate: t.Bool,
@@ -23,8 +21,8 @@ var scrollViewProps = t.struct({
     debugScroll: t.maybe(t.Bool)
 }, 'ScrollViewProps');
 
-var GestureRecognizerMixin = require('../GestureRecognizer/GestureRecognizerMixin');
-var PanGestureRecognizer = require('../GestureRecognizer/PanGestureRecognizer');
+var GestureRecognizerMixin = require('React-GestureRecognizer').GestureRecognizerMixin;
+var PanGestureRecognizer = require('React-GestureRecognizer').Recognizers.PanGestureRecognizer;
 
 var scrollDirType = {
     None: 0,
@@ -44,7 +42,7 @@ var ScrollView = React.createClass({
     scrollPositionOnMouseDown: undefined,
     getInitialState: function() {
         return {
-            scrollPosition: Models.Geometry.getPointZero(),
+            scrollPosition: Geometry.Constants.pointZero,
             scrollTimeout: undefined,
             isScrolling: false,
             animatingToScrollPosition: false,
@@ -54,13 +52,10 @@ var ScrollView = React.createClass({
     },
     componentWillMount: function() {
         this.gestureRecognizers = [];
-        var panGesture = PanGestureRecognizer();
-        panGesture.setActionForTarget(this.handlePanGesture, "ScrollView");
-        this.gestureRecognizers.push(panGesture);
     },
     componentDidMount: function() {
         if (this.props.contentSize) {
-            console.log('isTypeSafe<-->ContentSize: ' + Models.Size.is(this.props.contentSize));
+            console.log('isTypeSafe<-->ContentSize: ' + Geometry.DataTypes.Size.is(this.props.contentSize));
         }
         if (this.props.scrollViewDelegate) {
             console.log('isTypeSafe<-->CollectionViewDelegate: ' + ScrollViewDelegate.Protocol.is(this.props.scrollViewDelegate));
@@ -69,6 +64,14 @@ var ScrollView = React.createClass({
         if(this.refs["scrollable"] == null || this.refs["scrollable"].getDOMNode() == null) {
             console.error("No scrollable scroll ref available");
         }
+
+        var panGesture = PanGestureRecognizer();
+        panGesture.addTargetForCallback(this.getDOMNode(), this.handlePanGesture);
+        this.gestureRecognizers.push(panGesture);
+        if(this.props.paging) {
+            this.shouldHandleTouchGestures = true;
+        }
+        this.shouldHandleMouseGestures = true;
     },
     shouldComponentUpdate: function(nextProps, nextState) {
         var newScrollPosition = nextState.scrollPosition;
@@ -100,7 +103,7 @@ var ScrollView = React.createClass({
 
         var contentSize = this.props.contentSize;
         if(!contentSize) {
-            contentSize = new Models.Size({height:0, width:0});
+            contentSize = new Geometry.DataTypes.Size({height:0, width:0});
         }
         var wrapperStyle = {
             width:contentSize.width,
@@ -120,13 +123,14 @@ var ScrollView = React.createClass({
     handlePanGesture: function(gestureRecognizer) {
         var state = gestureRecognizer.getState();
         var touches = gestureRecognizer.getTouches();
-        var translation = gestureRecognizer.translation();
-        if(debugEvents) {
-            console.log("PanState: " + state + ", translation: " + translation.x + ", " + translation.y);
-        }
         if(touches && touches.length == 1) {
+            var touch = touches[0];
+            var translation = touch.getCurrentTranslation();
+            if(debugEvents) {
+                console.log("PanState: " + state + ", translation: " + translation.x + ", " + translation.y);
+            }
             if (state == "Began") {
-                this.scrollPositionOnMouseDown = new Models.Point({
+                this.scrollPositionOnMouseDown = new Geometry.DataTypes.Point({
                     x: this.refs["scrollable"].getDOMNode().scrollLeft,
                     y: this.refs["scrollable"].getDOMNode().scrollTop
 
@@ -135,7 +139,7 @@ var ScrollView = React.createClass({
 
                 var x = this.scrollPositionOnMouseDown.x - translation.x;
                 var y = this.scrollPositionOnMouseDown.y - translation.y;
-                this.scrollTo(new Models.Point({
+                this.scrollTo(new Geometry.DataTypes.Point({
                     x: x,
                     y: y
                 }), false)
@@ -155,7 +159,7 @@ var ScrollView = React.createClass({
         if(this.state.animatingToScrollPosition || this.state.mouseDown) {
             return;
         }
-        var scrollPosition = new Models.Point({x: e.target.scrollLeft, y: e.target.scrollTop});
+        var scrollPosition = new Geometry.DataTypes.Point({x: e.target.scrollLeft, y: e.target.scrollTop});
         if(this.props.scrollViewDelegate != null && this.props.scrollViewDelegate.scrollViewDidScroll != null) {
             this.props.scrollViewDelegate.scrollViewDidScroll(scrollPosition);
         }
@@ -188,7 +192,7 @@ var ScrollView = React.createClass({
         return scrollDirections;
     },
     getVisibileContentFrame: function(scrollPosition) {
-        var rect = new Models.Rect({
+        var rect = new Geometry.DataTypes.Rect({
             origin: scrollPosition,
             size: this.props.frame.size
         });
@@ -268,7 +272,7 @@ var ScrollView = React.createClass({
             if (remainder > this.props.frame.size.height / 2) {
                 page++;
             }
-            this.scrollTo(new Models.Point({
+            this.scrollTo(new Geometry.DataTypes.Point({
                 x: 0,
                 y: (page) * this.props.frame.size.height
             }), true);
@@ -278,7 +282,7 @@ var ScrollView = React.createClass({
             if (remainder > this.props.frame.size.width / 2) {
                 page++;
             }
-            this.scrollTo(new Models.Point({
+            this.scrollTo(new Geometry.DataTypes.Point({
                 x: (page) * this.props.frame.size.width,
                 y: 0
             }), true);

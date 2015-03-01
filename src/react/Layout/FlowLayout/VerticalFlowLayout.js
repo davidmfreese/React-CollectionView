@@ -1,11 +1,12 @@
-var t = require('tcomb');
+var t = require('tcomb-validation');
 
-var Models = require('../../Model/Models');
-var Enums = require('../../Enums/Enums');
+var Geometry = require('JSCoreGraphics').CoreGraphics.Geometry;
+var Foundation = require('JSCoreGraphics').Foundation;
+var Kit = require('JSCoreGraphics').Kit;
 var CollectionViewLayoutAttributes = require('../../Layout/CollectionViewLayoutAttributes');
 
 var VerticalSectionLayoutDetails = t.struct({
-    Frame: Models.Rect,
+    Frame: Geometry.DataTypes.Rect,
     NumberItems: t.Num,
     NumberOfTotalRows: t.Num,
     ItemTotalWidth: t.Num,
@@ -13,9 +14,9 @@ var VerticalSectionLayoutDetails = t.struct({
     ActualInteritemSpacing: t.Num,
     MinimumLineSpacing: t.Num,
     RowHeight: t.Num,
-    SectionInsets: Models.EdgeInsets,
-    HeaderReferenceSize: Models.Size,
-    FooterReferenceSize: Models.Size
+    SectionInsets: Kit.DataTypes.EdgeInsets,
+    HeaderReferenceSize: Geometry.DataTypes.Size,
+    FooterReferenceSize: Geometry.DataTypes.Size
 }, 'SectionLayoutDetails');
 
 VerticalSectionLayoutDetails.prototype.getEstimatedRowForPoint = function (point) {
@@ -46,11 +47,11 @@ function creationSectionLayoutDetails(indexPath, numberItemsInSection, startY, o
     var totalHeight = numberOfTotalRows * rowHeight + (numberOfTotalRows - 1) * opts.minimumLineSpacing;
     totalHeight += opts.headerReferenceSize.height + opts.footerReferenceSize.height;
     totalHeight += opts.sectionInsets.top + opts.sectionInsets.bottom;
-    var sectionSize = Models.Size({width: _constrainedHeightOrWidth, height: totalHeight});
+    var sectionSize = Geometry.DataTypes.Size({width: _constrainedHeightOrWidth, height: totalHeight});
 
     var sectionLayout = new VerticalSectionLayoutDetails({
-        Frame: new Models.Rect({
-            origin: new Models.Point({x: 0, y: startY}),
+        Frame: new Geometry.DataTypes.Rect({
+            origin: new Geometry.DataTypes.Point({x: 0, y: startY}),
             size: sectionSize
         }),
         NumberItems: numberItems,
@@ -77,7 +78,7 @@ function getSections(rect, sectionsLayoutDetails) {
     for(var i = 0; i < numberOfSections; i++) {
         var layout = sectionsLayoutDetails[i];
 
-        if(Models.Geometry.rectIntersects(rect, layout.Frame) || Models.Geometry.rectIntersects(layout.Frame, rect)) {
+        if(Geometry.rectIntersectsRect(rect, layout.Frame) || Geometry.rectIntersectsRect(layout.Frame, rect)) {
             sections.push(i);
         }
     }
@@ -85,18 +86,18 @@ function getSections(rect, sectionsLayoutDetails) {
     return sections;
 }
 function layoutAttributesForItemAtIndexPath(indexPath, sectionLayoutInfo, itemSize) {
-    Models.IndexPath.is(indexPath);
+    Foundation.DataTypes.IndexPath.is(indexPath);
     VerticalSectionLayoutDetails.is(sectionLayoutInfo);
-    Models.Size.is(itemSize);
+    Geometry.DataTypes.Size.is(itemSize);
 
     var row = sectionLayoutInfo.getRowForIndex(indexPath);
     var y = sectionLayoutInfo.Frame.origin.y + row * sectionLayoutInfo.RowHeight;
     y += sectionLayoutInfo.MinimumLineSpacing * (row) + sectionLayoutInfo.HeaderReferenceSize.height + sectionLayoutInfo.SectionInsets.top;
     var column = indexPath.row % sectionLayoutInfo.NumberOfColumns;
     var x = column * sectionLayoutInfo.ItemTotalWidth + column * sectionLayoutInfo.ActualInteritemSpacing + sectionLayoutInfo.SectionInsets.left;
-    var origin = new Models.Point({x: x, y: y});
-    var size = new Models.Size({height: itemSize.height, width: itemSize.width});
-    var frame = new Models.Rect({origin: origin, size: size});
+    var origin = new Geometry.DataTypes.Point({x: x, y: y});
+    var size = new Geometry.DataTypes.Size({height: itemSize.height, width: itemSize.width});
+    var frame = new Geometry.DataTypes.Rect({origin: origin, size: size});
 
     var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
         "indexPath": indexPath,
@@ -117,9 +118,9 @@ function layoutAttributesForSupplementaryView(indexPath, sectionLayoutInfo, kind
     var layoutAttributes = null;
 
     if(kind == "header") {
-        var frame = new Models.Rect({
-            origin: new Models.Point({x: 0, y: sectionLayoutInfo.Frame.origin.y}),
-            size: new Models.Size({height: sectionLayoutInfo.HeaderReferenceSize.height, width: sectionLayoutInfo.HeaderReferenceSize.width})
+        var frame = new Geometry.DataTypes.Rect({
+            origin: new Geometry.DataTypes.Point({x: 0, y: sectionLayoutInfo.Frame.origin.y}),
+            size: new Geometry.DataTypes.Size({height: sectionLayoutInfo.HeaderReferenceSize.height, width: sectionLayoutInfo.HeaderReferenceSize.width})
         });
         var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
             "indexPath": indexPath,
@@ -134,9 +135,9 @@ function layoutAttributesForSupplementaryView(indexPath, sectionLayoutInfo, kind
             "hidden": false
         });
     } else if(kind == "footer") {
-        var frame = new Models.Rect({
-            origin: new Models.Point({x: 0, y: sectionLayoutInfo.Frame.origin.y + sectionLayoutInfo.Frame.size.height - sectionLayoutInfo.FooterReferenceSize.height}),
-            size: new Models.Size({height: sectionLayoutInfo.FooterReferenceSize.height, width: sectionLayoutInfo.FooterReferenceSize.width})
+        var frame = new Geometry.DataTypes.Rect({
+            origin: new Geometry.DataTypes.Point({x: 0, y: sectionLayoutInfo.Frame.origin.y + sectionLayoutInfo.Frame.size.height - sectionLayoutInfo.FooterReferenceSize.height}),
+            size: new Geometry.DataTypes.Size({height: sectionLayoutInfo.FooterReferenceSize.height, width: sectionLayoutInfo.FooterReferenceSize.width})
         });
         var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
             "indexPath": indexPath,

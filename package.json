@@ -10,10 +10,8 @@
   "author": "David M Freese <davidmfreese@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "watch": "watchify index.js -o dist/react-collectionview.js -v",
-    "browserify-standalone": "browserify index.js --debug --standalone ReactCollectionView | exorcist dist/react-collectionview.js.map> dist/react-collectionview-standalone.js",
+    "browserify-standalone": "browserify index-standalone.js --debug --standalone ReactCollectionView | exorcist dist/react-collectionview.js.map> dist/react-collectionview-standalone.js",
     "build": "npm run browserify-standalone",
-    "start": "npm run watch & nodemon server.js",
     "test": "mocha ./test/ --recursive"
   },
   "dependencies": {
@@ -22,7 +20,9 @@
     "tcomb-react": "^0.2.0",
     "tcomb-validation": "^0.3.0",
     "underscore": "^1.8.1",
-    "velocity-animate": "^1.2.2"
+    "velocity-animate": "^1.2.2",
+    "js-coregraphics": "git://github.com/davidmfreese/JSCoreGraphics.git",
+    "react-gesture-recognizer": "git://github.com/davidmfreese/React-GestureRecognizerMixin.git"
   },
   "devDependencies": {
     "browserify": "~6.0.3",

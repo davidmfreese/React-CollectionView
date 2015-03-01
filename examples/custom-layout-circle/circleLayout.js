@@ -55,7 +55,7 @@ function circleLayoutFactory(viewSize, itemSize, layoutDelegate) {
         "layoutDelegate": layoutDelegate,
         "getCollectionViewContentSize": function() { return _contentSize},
         "prepareLayout": function(callback) {
-            _contentSize =  rCV.Models.Geometry.getSizeZero();
+            _contentSize =  rCV.Models.Geometry.gesizeZero();
             prepareLayout(callback);
         },
         "layoutAttributesForElementsInRect": function(rect) {

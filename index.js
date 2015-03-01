@@ -1,6 +1,3 @@
-
-var Models = require('./src/react/Model/Models');
-
 var CollectionView = require('./src/react/CollectionView.jsx');
 var CollectionViewDelegate = require('./src/react/CollectionViewDelegate');
 var CollectionViewCell = require('./src/react/Cell/CollectionViewCell.jsx');
@@ -22,19 +19,12 @@ var exports = {
     CollectionViewLayoutDelegate: CollectionViewLayoutDelegate,
     CollectionViewLayoutAttributes: CollectionViewLayoutAttributes,
     ScrollViewDelegate: ScrollViewDelegate,
-
-    Models: Models,
     Enums: require('./src/react/Enums/Enums'),
-    React: require('react/addons'),
-
     CollectionViewFlowLayout: CollectionViewFlowLayout,
 
-    GestureRecognizer: require('./src/react/GestureRecognizer/GestureRecognizer'),
-    GestureTouch: require('./src/react/GestureRecognizer/Touch'),
-    GestureRecognizerMixin: require('./src/react/GestureRecognizer/GestureRecognizerMixin'),
+    JSCoreGraphics: require('JSCoreGraphics')
 
-    PanGestureRecognizer: require('./src/react/GestureRecognizer/PanGestureRecognizer'),
-    TapGestureRecognizer: require('./src/react/GestureRecognizer/TapGestureRecognizer')
+
 };
 
 module.exports = exports;

@@ -1,4 +1,4 @@
-var t = require('tcomb');
+var t = require('tcomb-validation');
 var ScrollPositionType =
     t.enums.of('None Top CenteredVertically Bottom Left CenteredHorizontally Right', 'ScrollPositionType');
 
