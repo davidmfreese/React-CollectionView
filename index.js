@@ -1,6 +1,6 @@
-var CollectionView = require('./src/react/CollectionView.jsx');
+var CollectionView = require('./src/react/CollectionView');
 var CollectionViewDelegate = require('./src/react/CollectionViewDelegate');
-var CollectionViewCell = require('./src/react/Cell/CollectionViewCell.jsx');
+var CollectionViewCell = require('./src/react/Cell/CollectionViewCell');
 var CollectionViewDatasource = require('./src/react/Datasource/CollectionViewDatasource');
 var CollectionViewLayout = require('./src/react/Layout/CollectionViewLayout');
 var CollectionViewLayoutDelegate = require('./src/react/Layout/CollectionViewLayoutDelegate');
@@ -20,11 +20,7 @@ var exports = {
     CollectionViewLayoutAttributes: CollectionViewLayoutAttributes,
     ScrollViewDelegate: ScrollViewDelegate,
     Enums: require('./src/react/Enums/Enums'),
-    CollectionViewFlowLayout: CollectionViewFlowLayout,
-
-    JSCoreGraphics: require('JSCoreGraphics')
-
-
+    CollectionViewFlowLayout: CollectionViewFlowLayout
 };
 
 module.exports = exports;

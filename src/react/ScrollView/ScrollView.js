@@ -109,16 +109,22 @@ var ScrollView = React.createClass({
             width:contentSize.width,
             height:contentSize.height
         };
-        return (
-            <div className={'scroll-container'}
-                ref="scrollable"
-                style={scrollableStyle}
-                onScroll={this.onScroll}>
-                <div ref="smoothScrollingWrapper" style={wrapperStyle}>
-                    {this.props.content}
-                </div>
-            </div>
-        )
+        var containerProps = {
+            className: "'scroll-container'",
+            ref: "scrollable",
+            style: scrollableStyle,
+            onScroll: this.onScroll
+        };
+
+        var scrollingWrapperProps = {
+            ref:"smoothScrollingWrapper",
+            style: wrapperStyle
+        }
+
+        var scrollingWrapper = React.DOM.div(scrollingWrapperProps, this.props.content);
+        var container = React.DOM.div(containerProps, scrollingWrapper);
+
+        return container;
     },
     handlePanGesture: function(gestureRecognizer) {
         var state = gestureRecognizer.getState();

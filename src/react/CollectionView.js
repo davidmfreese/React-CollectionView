@@ -7,7 +7,7 @@ var CollectionViewDatasource = require('./Datasource/CollectionViewDatasource');
 var CollectionViewDelegate = require('./CollectionViewDelegate');
 var CollectionViewLayout = require('./Layout/CollectionViewLayout');
 var ScrollViewDelegate = require('./ScrollView/ScrollViewDelegate');
-var ScrollView = require('./ScrollView/ScrollView.jsx');
+var ScrollView = require('./ScrollView/ScrollView');
 var Enums = require('./Enums/Enums');
 var Utils = require('./Utils/Utils');
 
@@ -191,33 +191,34 @@ var CollectionView = React.createClass({
                 var view = this.props.collectionViewDatasource.viewForSupplementaryElementOfKind.call(this, kind, attributes.indexPath);
                 view.applyLayoutAttributes(attributes);
                 var ViewContent = view.getContentView();
-                children.push(<ViewContent/>);
+                children.push(ViewContent);
             } else { //for now default to cell
                 var cell = this.props.collectionViewDatasource.cellForItemAtIndexPath(attributes.indexPath);
                 cell.applyLayoutAttributes(attributes);
                 var CellContentView = cell.getContentView();
-                children.push(<CellContentView/>);
+                children.push(CellContentView);
             }
         }
 
         if(children.length == 0) {
-            children.push(<div></div>);
+            children.push(React.DOM.div());
         }
         var that = this;
-        return (
-        <ScrollView
-            ref="scrollView"
-            content={children}
-            scrollViewDelegate={that}
-            frame={this.props.frame}
-            contentSize={this.state.collectionViewContentSize}
-            scrollTimeout={100}
-            shouldUpdate={true}
-            paging={this.props.paging ? this.props.paging : false}
-            pagingDirection={this.props.pagingDirection ? this.props.pagingDirection : "ScrollDirectionTypeHorizontal"}
-            debugScroll={debugScroll}
-        />
-        )
+        var scrollViewProps = {
+            ref: "scrollView",
+            content: children,
+            scrollViewDelegate: that,
+            frame: this.props.frame,
+            contentSize: this.state.collectionViewContentSize,
+            scrollTimeout: 100,
+            shouldUpdate: true,
+            paging: this.props.paging ? this.props.paging : false,
+            pagingDirection: this.props.pagingDirection ? this.props.pagingDirection : "ScrollDirectionTypeHorizontal",
+            debugScroll: debugScroll
+        };
+
+        return React.createElement(ScrollView, scrollViewProps);
+
     },
 
     scrollViewDidScroll: function(scrollPosition) {
