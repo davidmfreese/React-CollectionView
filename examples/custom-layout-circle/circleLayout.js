@@ -1,5 +1,8 @@
 var rCV = ReactCollectionView;
 var React = rCV.React;
+var IndexPath = rCV.JSCoreGraphics.Foundation.DataTypes.IndexPath;
+var Geometry = rCV.JSCoreGraphics.CoreGraphics.Geometry;
+var Models = Geometry.DataTypes;
 
 function circleCellFactory() {
     var _style = {};
@@ -34,17 +37,17 @@ function circleCellFactory() {
 }
 
 function circleLayoutFactory(viewSize, itemSize, layoutDelegate) {
-    rCV.Models.Point.is(viewSize);
+    Models.Point.is(viewSize);
 
     var _cellCount = 0;
     var _radius = Math.min(viewSize.height, viewSize.width)/2.5;
     var _itemSize = itemSize;
 
     var _contentSize = viewSize;
-    var _center = new rCV.Models.Point({x: viewSize.width / 2.0, y: viewSize.height / 2.0});
+    var _center = new Models.Point({x: viewSize.width / 2.0, y: viewSize.height / 2.0});
 
     var prepareLayout = function(callback) {
-        _cellCount = layoutDelegate.numberItemsInSection(new rCV.Models.IndexPath({row: 0, section:0}));
+        _cellCount = layoutDelegate.numberItemsInSection(new IndexPath({row: 0, section:0}));
 
         if(callback) {
             callback("success");
@@ -55,14 +58,14 @@ function circleLayoutFactory(viewSize, itemSize, layoutDelegate) {
         "layoutDelegate": layoutDelegate,
         "getCollectionViewContentSize": function() { return _contentSize},
         "prepareLayout": function(callback) {
-            _contentSize =  rCV.Models.Geometry.gesizeZero();
+            _contentSize =  Geometry.Constants.sizeZero;
             prepareLayout(callback);
         },
         "layoutAttributesForElementsInRect": function(rect) {
             var layoutAttributesInRect = [];
 
             for(var i = 0; i < _cellCount; i++) {
-                var attributes = this.layoutAttributesForItemAtIndexPath(new rCV.Models.IndexPath({row: i, section:0}));
+                var attributes = this.layoutAttributesForItemAtIndexPath(new IndexPath({row: i, section:0}));
                 layoutAttributesInRect.push(attributes);
             }
 
@@ -74,7 +77,7 @@ function circleLayoutFactory(viewSize, itemSize, layoutDelegate) {
 
             var layoutAttributes = null;
 
-            var size = new rCV.Models.Size({width: _itemSize, height: _itemSize});
+            var size = new Models.Size({width: _itemSize, height: _itemSize});
             var centerX = _center.x + _radius * Math.cos(2 * indexPath.row * Math.PI / _cellCount);
             var centerY = _center.y + _radius * Math.sin(2 * indexPath.row * Math.PI / _cellCount);
 
@@ -82,8 +85,8 @@ function circleLayoutFactory(viewSize, itemSize, layoutDelegate) {
             var originY = centerY - _itemSize /2.5;
 
 
-            var frame = new rCV.Models.Rect({
-                origin: new rCV.Models.Point({x: originX, y: originY}),
+            var frame = new Models.Rect({
+                origin: new Models.Point({x: originX, y: originY}),
                 size: size
             });
             var layoutAttributes = new rCV.CollectionViewLayoutAttributes.Protocol({

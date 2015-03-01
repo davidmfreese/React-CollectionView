@@ -1,8 +1,13 @@
 var rCV = ReactCollectionView;
 var React = rCV.React;
 
-var collectionViewSize = new rCV.Models.Size({height: 500, width:360});
-var cellSize = new rCV.Models.Size({height: 100, width:100});
+var Models = rCV.JSCoreGraphics.CoreGraphics.Geometry.DataTypes;
+var EdgeInsets = rCV.JSCoreGraphics.Kit.DataTypes.EdgeInsets;
+
+var innerWidth = window.innerWidth;
+var cellWidth = Math.floor(innerWidth / 3);
+var collectionViewSize = new Models.Size({height: window.innerHeight, width:3*cellWidth});
+var cellSize = new Models.Size({height: cellWidth, width: cellWidth});
 
 //Data
 var allData = [];
@@ -31,12 +36,11 @@ function loadMoreData(batchSize){
     }, 500);
 }
 
-var itemSize = new rCV.Models.Size({height:100, width:100});
-var insets = new rCV.Models.EdgeInsets({top:10, left:10, bottom:10, right:10});
+var insets = new EdgeInsets({top:0, left:0, bottom:0, right:0});
 
-var frame = new rCV.Models.Rect({
-    origin: new rCV.Models.Point({x:0, y:0}),
-    size: new rCV.Models.Size({height:500, width:collectionViewSize.width})
+var frame = new Models.Rect({
+    origin: new Models.Point({x:0, y:0}),
+    size: collectionViewSize
 });
 
 function getProps() {
@@ -75,7 +79,7 @@ function getProps() {
     });
 
     var infinityLoadMoreBuffer = collectionViewSize.height*1.5;
-    var previousScrollPosition = new rCV.Models.Point({x: 0, y: 0});
+    var previousScrollPosition = new Models.Point({x: 0, y: 0});
     var scrollViewDelegate = new rCV.ScrollViewDelegate.Protocol({
         "scrollViewDidScroll": function (scrollPosition) {
             var scrollTop = scrollPosition.y;
@@ -104,9 +108,9 @@ function getProps() {
         flowDirection: "ScrollDirectionTypeVertical",
         width: collectionViewSize.width,
         height: 0,
-        minimumLineSpacing: 10,
-        minimumInteritemSpacing: 10,
-        itemSize: itemSize
+        minimumLineSpacing: 0,
+        minimumInteritemSpacing: 0,
+        itemSize: cellSize
     };
     var flowLayout = rCV.CollectionViewFlowLayout.Layout(layoutDelegate, flowLayoutOptions);
 

@@ -1,8 +1,11 @@
 var rCV = ReactCollectionView;
 var React = rCV.React;
+var IndexPath = rCV.JSCoreGraphics.Foundation.DataTypes.IndexPath;
+var Models = rCV.JSCoreGraphics.CoreGraphics.Geometry.DataTypes;
+var EdgeInsets = rCV.JSCoreGraphics.Kit.DataTypes.EdgeInsets;
 
 function throttle() {
-    clearTimeout(reload.timeoutInterval );
+    clearTimeout(reload.timeoutInterval);
     reload.timeoutInterval = setTimeout(function(){
         reload(true);
     }, 150);
@@ -86,9 +89,9 @@ function reload(invalidate) {
     var numberOfRows = 6;
     var width = Math.floor(windowWidth/6);
 
-    var collectionViewSize = new rCV.Models.Size({height: window.innerHeight, width: windowWidth});
-    var insets = new rCV.Models.EdgeInsets({top:0, left:0, bottom:0, right:0});
-    var cellSize = new rCV.Models.Size({height: width, width:width});
+    var collectionViewSize = new Models.Size({height: window.innerHeight, width: windowWidth});
+    var insets = new EdgeInsets({top:0, left:0, bottom:0, right:0});
+    var cellSize = new Models.Size({height: width, width:width});
 
     var datasourceDelegate = new rCV.CollectionViewDatasource.Protocol({
         numberItemsInSection: function(indexPath) {
@@ -144,9 +147,9 @@ function reload(invalidate) {
     };
     var flowLayout = new rCV.CollectionViewFlowLayout.Layout(layoutDelegate, flowLayoutOptions);
 
-    var frame = new rCV.Models.Rect({
-        origin: new rCV.Models.Point({x: 0, y: 0}),
-        size: new rCV.Models.Size({height: collectionViewSize.height, width: collectionViewSize.width})
+    var frame = new Models.Rect({
+        origin: new Models.Point({x: 0, y: 0}),
+        size: new Models.Size({height: collectionViewSize.height, width: collectionViewSize.width})
     });
     var props = {
         collectionViewDatasource: datasourceDelegate,

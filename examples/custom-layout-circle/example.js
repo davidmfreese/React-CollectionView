@@ -1,11 +1,17 @@
 var rCV = ReactCollectionView;
 var React = rCV.React;
+var IndexPath = rCV.JSCoreGraphics.Foundation.DataTypes.IndexPath;
+var Models = rCV.JSCoreGraphics.CoreGraphics.Geometry.DataTypes;
 
-var collectionViewSize = new rCV.Models.Size({height: 500, width:500});
+var collectionViewSize = new Models.Size({height: window.innerHeight, width:window.innerWidth});
+var constrainedSize = Math.max(collectionViewSize.height, collectionViewSize.width);
+var itemRadius = constrainedSize / 50;
+var numberItems =  constrainedSize/itemRadius;
+
 
 //Data
 var datasource = [[]];
-for(var i = 1; i <= 50; i++) {
+for(var i = 1; i <= numberItems; i++) {
     datasource[0].push("Item: " + i);
 }
 
@@ -53,12 +59,12 @@ var collectionViewDelegate = new rCV.CollectionViewDelegate.Protocol({
     willDisplayCellForItemAtIndexPath: function (indexPath) {}
 });
 
-var circleLayout = circleLayoutFactory(rCV.Models.Size({height: 1000, width:1000}), 50, layoutDelegate);
+var circleLayout = circleLayoutFactory(collectionViewSize, itemRadius, layoutDelegate);
 
 
-var frame = new rCV.Models.Rect({
-    origin: new rCV.Models.Point({x:0, y:0}),
-    size: new rCV.Models.Size({height:500, width:collectionViewSize.width})
+var frame = new Models.Rect({
+    origin: new Models.Point({x:0, y:0}),
+    size: collectionViewSize
 });
 var props = {
     collectionViewDatasource: datasourceDelegate,

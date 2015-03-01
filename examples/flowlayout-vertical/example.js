@@ -1,21 +1,19 @@
 var rCV = ReactCollectionView;
 var React = rCV.React;
+var Geometry = rCV.JSCoreGraphics.CoreGraphics.Geometry;
+var Models = Geometry.DataTypes;
+var EdgeInsets = rCV.JSCoreGraphics.Kit.DataTypes.EdgeInsets;
 
-var collectionViewSize = new rCV.Models.Size({height: 360, width:500});
-var cellSize = new rCV.Models.Size({height: 100, width:100});
+var innerWidth = window.innerWidth;
+var cellWidth = Math.floor(innerWidth / 3);
+var collectionViewSize = new Models.Size({height: window.innerHeight, width:3*cellWidth});
+var cellSize = new Models.Size({height: cellWidth, width: cellWidth});
+
 
 //Data
 var datasource = [];
-var itemsPerSection = 34;
-var numberOfSections = 5000;
-
-for(var j =1; j <= numberOfSections; j++) {
-    var sectionData = [];
-    for(var i = 1; i <= itemsPerSection; i++) {
-        sectionData.push("Sec:" + j + " Item:" + i);
-    }
-
-    datasource.push(sectionData);
+for(var i = 1; i <= 10000; i++) {
+    datasource.push("Item: " + i);
 }
 
 //Create your cell style
@@ -55,73 +53,26 @@ function SimpleCellFactory(data) {
     return SimpleCell;
 }
 
-//Create your cell style
-function SupplementaryViewFactory(kind, indexPath) {
-    var _style = {};
-    var _indexPath = indexPath;
-    var _kind = kind;
-    var reusableView = new rCV.CollectionViewCell.Protocol({
-        "reuseIdentifier": "supplementary",
-        "highlighted": false,
-        "selected": false,
-        "prepareForReuse": function () {
-            _style = null;
-        },
-        "applyLayoutAttributes": function (attributes) {
-            _style = {
-                position: "absolute",
-                top: attributes.frame.origin.y,
-                left: attributes.frame.origin.x,
-                height:attributes.frame.size.height,
-                width: attributes.frame.size.width
-            };
-
-        },
-        "getContentView": function () {
-            var cellStyle = {
-                "text-align": "center",
-                "-webkit-transform": "rotate(-90deg)",
-                "-moz-transform": "rotate(-90deg)",
-                "-ms-transform": "rotate(-90deg)",
-                "-o-transform": "rotate(-90deg)",
-                "filter": "progid:DXImageTransform.Microsoft.BasicImage(rotation=3)",
-                "margin-top": collectionViewSize.height/2 - 10,
-                "margin-right": 10
-            };
-
-            var Data = React.createElement('div', {style: cellStyle}, _kind + ": " + (_indexPath.section + 1));
-            var View = React.createElement('div', {className: "suppView", style: _style}, Data);
-            return View;
-        }
-    });
-
-    return reusableView;
-}
-
 var datasourceDelegate = new rCV.CollectionViewDatasource.Protocol({
     numberItemsInSection: function(indexPath) {
-        return datasource[indexPath.section].length;
-    },
-    numberOfSectionsInCollectionView: function() {
         return datasource.length;
     },
+    numberOfSectionsInCollectionView: function() {
+        return 1;
+    },
     cellForItemAtIndexPath: function(indexPath) {
-        var cell = new SimpleCellFactory(datasource[indexPath.section][indexPath.row]);
+        var cell = new SimpleCellFactory(datasource[indexPath.row]);
         return cell;
-    }, viewForSupplementaryElementOfKind: function(kind, indexPath) {
-        var view = SupplementaryViewFactory(kind, indexPath);
-        return view;
     }
 });
 
-var itemSize = new rCV.Models.Size({height:120, width:120});
-var insets = new rCV.Models.EdgeInsets({top:10, left:10, bottom:10, right:10});
+var insets = new EdgeInsets({top:0, left:0, bottom:0, right:0});
 var layoutDelegate = new rCV.CollectionViewLayoutDelegate.Protocol({
     numberItemsInSection: function(indexPath) {
-        return datasource[indexPath.section].length;
+        return datasource.length;
     },
     numberOfSectionsInCollectionView: function() {
-        return datasource.length;
+        return 1;
     },
     sizeForItemAtIndexPath: function(indexPath) {
         return itemSize;
@@ -148,28 +99,24 @@ var collectionViewDelegate = new rCV.CollectionViewDelegate.Protocol({
 });
 
 var flowLayoutOptions = {
-    flowDirection: "ScrollDirectionTypeHorizontal",
+    flowDirection: "ScrollDirectionTypeVertical",
     width: collectionViewSize.width,
-    height: collectionViewSize.height,
+    height: 0,
     minimumLineSpacing: 0,
     minimumInteritemSpacing: 0,
-    itemSize: itemSize,
-    sectionInsets: new rCV.Models.EdgeInsets({top:0, left:0, bottom:0, right:0}),
-    headerReferenceSize: new rCV.Models.Size({height: collectionViewSize.height, width: 60}),
-    footerReferenceSize: new rCV.Models.Size({height: collectionViewSize.height, width: 60})
+    itemSize: cellSize
 };
-
 var flowLayout = rCV.CollectionViewFlowLayout.Layout(layoutDelegate, flowLayoutOptions);
-var frame = new rCV.Models.Rect({
-    origin: new rCV.Models.Point({x:0, y:0}),
+
+var frame = new Geometry.DataTypes.Rect({
+    origin: new Geometry.DataTypes.Point({x:0, y:0}),
     size: collectionViewSize
 });
 var props = {
     collectionViewDatasource: datasourceDelegate,
     frame: frame,
     collectionViewDelegate: collectionViewDelegate,
-    collectionViewLayout: flowLayout,
-    preloadPageCount: 2
+    collectionViewLayout: flowLayout
 };
 
 var collectionView = React.createElement(rCV.CollectionView.View, props);

@@ -1,12 +1,17 @@
 var rCV = ReactCollectionView;
 var React = rCV.React;
+var Geometry = rCV.JSCoreGraphics.CoreGraphics.Geometry;
+var Models = Geometry.DataTypes;
+var EdgeInsets = rCV.JSCoreGraphics.Kit.DataTypes.EdgeInsets;
 
 //Properties
-var collectionViewSize = new rCV.Models.Size({height: 500, width:360});
-var cellSize = new rCV.Models.Size({height: 120, width:120});
-var sectionInsets = new rCV.Models.EdgeInsets({top:10, left:10, bottom:10, right:10});
-var frame = new rCV.Models.Rect({
-    origin: new rCV.Models.Point({x:0, y:0}),
+var innerWidth = window.innerWidth;
+var cellWidth = Math.floor(innerWidth / 3);
+var collectionViewSize = new Models.Size({height: window.innerHeight, width:3*cellWidth});
+var cellSize = new Models.Size({height: cellWidth, width: cellWidth});
+var sectionInsets = new EdgeInsets({top:10, left:10, bottom:10, right:10});
+var frame = new Models.Rect({
+    origin: new Models.Point({x:0, y:0}),
     size: collectionViewSize
 });
 
@@ -96,7 +101,7 @@ function create(invalidate) {
         flowDirection: "ScrollDirectionTypeVertical",
         width: collectionViewSize.width,
         height: 0,
-        minimumLineSpacing: 10,
+        minimumLineSpacing: 0,
         minimumInteritemSpacing: 0,
         itemSize: cellSize
     };
