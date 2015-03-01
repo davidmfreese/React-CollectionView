@@ -266,8 +266,15 @@ var ScrollView = React.createClass({
         } else {
             domElement.scrollTop = toScrollPosition.y;
             domElement.scrollLeft = toScrollPosition.x;
+            var scrollDirections = this.getScrollDirection(toScrollPosition);
+            var that = this;
             this.setState({
-                scrollPosition: toScrollPosition
+                scrollPosition: toScrollPosition,
+                scrollDirections: scrollDirections
+            }, function() {
+                if(that.props.scrollViewDelegate != null && that.props.scrollViewDelegate.scrollViewDidScroll != null) {
+                    that.props.scrollViewDelegate.scrollViewDidScroll(toScrollPosition);
+                }
             })
         }
     },
