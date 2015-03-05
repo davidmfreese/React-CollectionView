@@ -70,7 +70,6 @@ var CollectionView = React.createClass({
         return {
             collectionViewContentSize: Geometry.Constants.sizeZero,
             currentLoadedRect: Geometry.Constants.rectZero,
-            defaultBlockSize: Geometry.Constants.sizeZero,
             frame: Geometry.Constants.rectZero,
             layoutAttributes: []
         };
@@ -281,7 +280,7 @@ var CollectionView = React.createClass({
     getRectForScrollPosition: function(scrollPosition, overrideDefaultBlockSize) {
         var defaultBlockSize = overrideDefaultBlockSize;
         if(!defaultBlockSize) {
-            defaultBlockSize = this.state.defaultBlockSize;
+            defaultBlockSize = this.props.frame.size;
         }
 
         var preloadPageCount = this.getPreloadPageCount();
