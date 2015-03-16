@@ -1,13 +1,13 @@
-var t = require('tcomb-validation');
+var t = require("tcomb-validation");
 
-var Geometry = require('JSCoreGraphics').CoreGraphics.Geometry;
-var Foundation = require('JSCoreGraphics').Foundation;
-var FlowLayoutOptions = require('./FlowLayoutOptions');
-var HorizontalFlowLayout = require('./HorizontalFlowLayout');
-var VerticalFlowLayout = require('./VerticalFlowLayout');
-var CollectionViewDatasource = require('./../CollectionViewLayout');
-var CollectionViewLayout = require('./../CollectionViewLayout');
-var CollectionViewLayoutDelegate = require('./../CollectionViewLayoutDelegate');
+var Geometry = require("JSCoreGraphics").CoreGraphics.Geometry;
+var Foundation = require("JSCoreGraphics").Foundation;
+var FlowLayoutOptions = require("./FlowLayoutOptions");
+var HorizontalFlowLayout = require("./HorizontalFlowLayout");
+var VerticalFlowLayout = require("./VerticalFlowLayout");
+var CollectionViewDatasource = require("./../CollectionViewLayout");
+var CollectionViewLayout = require("./../CollectionViewLayout");
+var CollectionViewLayoutDelegate = require("./../CollectionViewLayoutDelegate");
 
 function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
     CollectionViewLayoutDelegate.Protocol.is(layoutDelegate);
@@ -17,22 +17,23 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
     var _totalContentSize = Geometry.Constants.sizeZero;
     var _constrainedHeightOrWidth = 0;
 
-    var setConstrainedHeightOrWidth = function() {
-        if(sanitizedOpts.flowDirection == "ScrollDirectionTypeVertical") {
+    var setConstrainedHeightOrWidth = function () {
+        if (sanitizedOpts.flowDirection == "ScrollDirectionTypeVertical") {
             _constrainedHeightOrWidth = sanitizedOpts.width;
-        } else if(sanitizedOpts.flowDirection == "ScrollDirectionTypeHorizontal") {
+        }
+        else if (sanitizedOpts.flowDirection == "ScrollDirectionTypeHorizontal") {
             _constrainedHeightOrWidth = sanitizedOpts.height;
         }
     };
     setConstrainedHeightOrWidth();
 
-    var prepareLayout = function() {
+    var prepareLayout = function () {
         _sectionLayoutDetails = [];
         _totalContentSize = Geometry.Constants.sizeZero;
         setConstrainedHeightOrWidth();
 
         var numberOfSections = layoutDelegate.numberOfSectionsInCollectionView.call(this, null);
-        if(sanitizedOpts.flowDirection == "ScrollDirectionTypeVertical") {
+        if (sanitizedOpts.flowDirection == "ScrollDirectionTypeVertical") {
             var totalHeight = 0;
             var startY = 0;
             for (var i = 0; i < numberOfSections; i++) {
@@ -47,7 +48,8 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
 
             _totalContentSize = new Geometry.DataTypes.Size({height: totalHeight, width: _constrainedHeightOrWidth});
 
-        } else if(opts.flowDirection == "ScrollDirectionTypeHorizontal") {
+        }
+        else if (opts.flowDirection == "ScrollDirectionTypeHorizontal") {
             var totalWidth = 0;
             var startX = 0;
             for (var i = 0; i < numberOfSections; i++) {
@@ -65,46 +67,48 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
     };
 
     var CollectionViewFlowLayout = new CollectionViewLayout.Protocol({
-        "layoutDelegate": layoutDelegate,
-        "getCollectionViewContentSize": function() {
-            if(_totalContentSize && _totalContentSize.width > 0) {
+        layoutDelegate: layoutDelegate,
+        getCollectionViewContentSize: function () {
+            if (_totalContentSize && _totalContentSize.width > 0) {
                 return _totalContentSize;
             }
 
             var numberOfSections = layoutDelegate.numberOfSectionsInCollectionView.call(this, null);
-            if(_sectionLayoutDetails && _sectionLayoutDetails[numberOfSections - 1]){
+            if (_sectionLayoutDetails && _sectionLayoutDetails[numberOfSections - 1]) {
                 var height = 0;
-                for(var i = 0; i < numberOfSections; i++) {
+                for (var i = 0; i < numberOfSections; i++) {
                     height += _sectionLayoutDetails[i].Frame.size.height;
                 }
 
-                if(height > 0) {
-                    _totalContentSize = new Geometry.DataTypes.Size({ width: _width, height: height});
-                } else {
+                if (height > 0) {
+                    _totalContentSize = new Geometry.DataTypes.Size({width: _width, height: height});
+                }
+                else {
                     _totalContentSize = Geometry.Constants.sizeZero;
                 }
-            } else {
+            }
+            else {
                 _totalContentSize = Geometry.Constants.sizeZero;
             }
             return _totalContentSize;
         },
-        "prepareLayout": function(callback) {
+        prepareLayout: function (callback) {
             prepareLayout();
-            if(callback) {
+            if (callback) {
                 callback("success");
             }
         },
-        "layoutAttributesForElementsInRect": function(rect) {
+        layoutAttributesForElementsInRect: function (rect) {
             var layoutAttributesInRect = [];
 
-            if(Geometry.isRectZero(rect)) {
+            if (Geometry.isRectZero(rect)) {
                 return layoutAttributesInRect;
             }
-            if(opts.flowDirection == "ScrollDirectionTypeVertical") {
+            if (opts.flowDirection == "ScrollDirectionTypeVertical") {
 
                 var sections = VerticalFlowLayout.GetSectionsForRect(rect, _sectionLayoutDetails);
                 var firstSection = _sectionLayoutDetails[sections[0]];
-                if(!firstSection) {
+                if (!firstSection) {
                     return layoutAttributesInRect;
                 }
 
@@ -119,7 +123,7 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
                     }
 
                     var header = VerticalFlowLayout.LayoutAttributesForSupplementaryView(indexPath, _sectionLayoutDetails[indexPath.section], "header");
-                    if(header && !Geometry.isSizeZero(header.frame.size)) {
+                    if (header && !Geometry.isSizeZero(header.frame.size)) {
                         layoutAttributesInRect.push(header);
                     }
 
@@ -137,21 +141,23 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
                         }
                         if (Geometry.rectIntersectsRect(layoutAttributes.frame, rect)) {
                             layoutAttributesInRect.push(layoutAttributes);
-                        } else {
+                        }
+                        else {
                             //console.log("no intersection");
                         }
                     }
 
                     var footer = VerticalFlowLayout.LayoutAttributesForSupplementaryView(indexPath, _sectionLayoutDetails[indexPath.section], "footer");
-                    if(footer && !Geometry.isSizeZero(footer.frame.size)) {
+                    if (footer && !Geometry.isSizeZero(footer.frame.size)) {
                         layoutAttributesInRect.push(footer);
                     }
                 }
-            } else if(opts.flowDirection == "ScrollDirectionTypeHorizontal") {
+            }
+            else if (opts.flowDirection == "ScrollDirectionTypeHorizontal") {
 
                 var sections = HorizontalFlowLayout.GetSectionsForRect(rect, _sectionLayoutDetails);
                 var firstSection = _sectionLayoutDetails[sections[0]];
-                if(!firstSection) {
+                if (!firstSection) {
                     return layoutAttributesInRect;
                 }
 
@@ -166,7 +172,7 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
                     }
 
                     var header = HorizontalFlowLayout.LayoutAttributesForSupplementaryView(indexPath, _sectionLayoutDetails[indexPath.section], "header");
-                    if(header && !Geometry.isSizeZero(header.frame.size)) {
+                    if (header && !Geometry.isSizeZero(header.frame.size)) {
                         layoutAttributesInRect.push(header);
                     }
 
@@ -184,13 +190,14 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
                         }
                         if (Geometry.rectIntersectsRect(layoutAttributes.frame, rect)) {
                             layoutAttributesInRect.push(layoutAttributes);
-                        } else {
+                        }
+                        else {
                             //console.log("no intersection");
                         }
                     }
 
                     var footer = HorizontalFlowLayout.LayoutAttributesForSupplementaryView(indexPath, _sectionLayoutDetails[indexPath.section], "footer");
-                    if(footer && !Geometry.isSizeZero(footer.frame.size)) {
+                    if (footer && !Geometry.isSizeZero(footer.frame.size)) {
                         layoutAttributesInRect.push(footer);
                     }
                 }
@@ -199,20 +206,21 @@ function CollectionViewFlowLayoutFactory(layoutDelegate, opts) {
 
             return new CollectionViewLayout.Model.ArrayOfLayoutAttributes(layoutAttributesInRect);
         },
-        "layoutAttributesForItemAtIndexPath": function(indexPath) {
+        layoutAttributesForItemAtIndexPath: function (indexPath) {
 
-            if(opts.flowDirection == "ScrollDirectionTypeVertical") {
+            if (opts.flowDirection == "ScrollDirectionTypeVertical") {
                 var attributes = VerticalFlowLayout.LayoutAttributesForItemAtIndexPath(indexPath, _sectionLayoutDetails[indexPath.section], sanitizedOpts.itemSize);
                 return attributes;
-            } else if(opts.flowDirection == "ScrollDirectionTypeHorizontal") {
+            }
+            else if (opts.flowDirection == "ScrollDirectionTypeHorizontal") {
                 var attributes = HorizontalFlowLayout.LayoutAttributesForItemAtIndexPath(indexPath, _sectionLayoutDetails[indexPath.section], sanitizedOpts.itemSize);
                 return attributes;
             }
         },
-        "prepareForCollectionViewUpdates": function() {
+        prepareForCollectionViewUpdates: function () {
 
         },
-        "invalidateLayout": function() {
+        invalidateLayout: function () {
             prepareLayout();
         }
     }, true);//allow this to be mutable

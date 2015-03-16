@@ -1,9 +1,9 @@
-var t = require('tcomb-validation');
+var t = require("tcomb-validation");
 
-var Geometry = require('JSCoreGraphics').CoreGraphics.Geometry;
-var Foundation = require('JSCoreGraphics').Foundation;
-var Kit = require('JSCoreGraphics').Kit;
-var CollectionViewLayoutAttributes = require('../../Layout/CollectionViewLayoutAttributes');
+var Geometry = require("JSCoreGraphics").CoreGraphics.Geometry;
+var Foundation = require("JSCoreGraphics").Foundation;
+var Kit = require("JSCoreGraphics").Kit;
+var CollectionViewLayoutAttributes = require("../../Layout/CollectionViewLayoutAttributes");
 
 var VerticalSectionLayoutDetails = t.struct({
     Frame: Geometry.DataTypes.Rect,
@@ -17,7 +17,7 @@ var VerticalSectionLayoutDetails = t.struct({
     SectionInsets: Kit.DataTypes.EdgeInsets,
     HeaderReferenceSize: Geometry.DataTypes.Size,
     FooterReferenceSize: Geometry.DataTypes.Size
-}, 'SectionLayoutDetails');
+}, "SectionLayoutDetails");
 
 VerticalSectionLayoutDetails.prototype.getEstimatedRowForPoint = function (point) {
     //zero based
@@ -75,10 +75,10 @@ function getSections(rect, sectionsLayoutDetails) {
     var endSection = -1;
 
     var numberOfSections = sectionsLayoutDetails.length;
-    for(var i = 0; i < numberOfSections; i++) {
+    for (var i = 0; i < numberOfSections; i++) {
         var layout = sectionsLayoutDetails[i];
 
-        if(Geometry.rectIntersectsRect(rect, layout.Frame) || Geometry.rectIntersectsRect(layout.Frame, rect)) {
+        if (Geometry.rectIntersectsRect(rect, layout.Frame) || Geometry.rectIntersectsRect(layout.Frame, rect)) {
             sections.push(i);
         }
     }
@@ -100,16 +100,16 @@ function layoutAttributesForItemAtIndexPath(indexPath, sectionLayoutInfo, itemSi
     var frame = new Geometry.DataTypes.Rect({origin: origin, size: size});
 
     var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
-        "indexPath": indexPath,
-        "representedElementCategory": function(){
+        indexPath: indexPath,
+        representedElementCategory: function () {
             return "CollectionElementTypeCell";
         },
-        "representedElementKind": function(){
+        representedElementKind: function () {
             return "default"
         },
-        "frame": frame,
-        "size": size,
-        "hidden": false
+        frame: frame,
+        size: size,
+        hidden: false
     });
 
     return layoutAttributes;
@@ -117,39 +117,49 @@ function layoutAttributesForItemAtIndexPath(indexPath, sectionLayoutInfo, itemSi
 function layoutAttributesForSupplementaryView(indexPath, sectionLayoutInfo, kind) {
     var layoutAttributes = null;
 
-    if(kind == "header") {
+    if (kind == "header") {
         var frame = new Geometry.DataTypes.Rect({
             origin: new Geometry.DataTypes.Point({x: 0, y: sectionLayoutInfo.Frame.origin.y}),
-            size: new Geometry.DataTypes.Size({height: sectionLayoutInfo.HeaderReferenceSize.height, width: sectionLayoutInfo.HeaderReferenceSize.width})
+            size: new Geometry.DataTypes.Size({
+                height: sectionLayoutInfo.HeaderReferenceSize.height,
+                width: sectionLayoutInfo.HeaderReferenceSize.width
+            })
         });
         var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
-            "indexPath": indexPath,
-            "representedElementCategory": function(){
+            indexPath: indexPath,
+            representedElementCategory: function () {
                 return "CollectionElementTypeSupplementaryView";
             },
-            "representedElementKind": function(){
+            representedElementKind: function () {
                 return kind.toString();
             },
-            "frame": frame,
-            "size": frame.size,
-            "hidden": false
+            frame: frame,
+            size: frame.size,
+            hidden: false
         });
-    } else if(kind == "footer") {
+    }
+    else if (kind == "footer") {
         var frame = new Geometry.DataTypes.Rect({
-            origin: new Geometry.DataTypes.Point({x: 0, y: sectionLayoutInfo.Frame.origin.y + sectionLayoutInfo.Frame.size.height - sectionLayoutInfo.FooterReferenceSize.height}),
-            size: new Geometry.DataTypes.Size({height: sectionLayoutInfo.FooterReferenceSize.height, width: sectionLayoutInfo.FooterReferenceSize.width})
+            origin: new Geometry.DataTypes.Point({
+                x: 0,
+                y: sectionLayoutInfo.Frame.origin.y + sectionLayoutInfo.Frame.size.height - sectionLayoutInfo.FooterReferenceSize.height
+            }),
+            size: new Geometry.DataTypes.Size({
+                height: sectionLayoutInfo.FooterReferenceSize.height,
+                width: sectionLayoutInfo.FooterReferenceSize.width
+            })
         });
         var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
-            "indexPath": indexPath,
-            "representedElementCategory": function(){
+            indexPath: indexPath,
+            representedElementCategory: function () {
                 return "CollectionElementTypeSupplementaryView";
             },
-            "representedElementKind": function(){
+            representedElementKind: function () {
                 return kind;
             },
-            "frame": frame,
-            "size": frame.size,
-            "hidden": false
+            frame: frame,
+            size: frame.size,
+            hidden: false
         });
     }
 

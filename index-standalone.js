@@ -1,7 +1,7 @@
-var exports = require('./index');
+var exports = require("./index");
 
-exports.React = require('react/addons');
-exports.JSCoreGraphics = require('JSCoreGraphics');
+exports.React = require("react/addons");
+exports.JSCoreGraphics = require("JSCoreGraphics");
 
 module.exports = exports;
 

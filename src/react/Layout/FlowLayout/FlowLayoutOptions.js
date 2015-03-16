@@ -1,10 +1,10 @@
-var t = require('tcomb-validation');
+var t = require("tcomb-validation");
 
-var Geometry = require('JSCoreGraphics').CoreGraphics.Geometry;
-var Foundation = require('JSCoreGraphics').Foundation;
-var Kit = require('JSCoreGraphics').Kit;
-var Enums = require('../../Enums/Enums');
-var ScrollDirectionType = require('React-ScrollView').Enums.ScrollDirectionType;
+var Geometry = require("JSCoreGraphics").CoreGraphics.Geometry;
+var Foundation = require("JSCoreGraphics").Foundation;
+var Kit = require("JSCoreGraphics").Kit;
+var Enums = require("../../Enums/Enums");
+var ScrollDirectionType = require("React-ScrollView").Enums.ScrollDirectionType;
 
 var FlowLayoutOptions = t.struct({
     flowDirection: ScrollDirectionType,
@@ -16,7 +16,7 @@ var FlowLayoutOptions = t.struct({
     itemSize: t.maybe(Geometry.DataTypes.Size),
     headerReferenceSize: t.maybe(Geometry.DataTypes.Size),
     footerReferenceSize: t.maybe(Geometry.DataTypes.Size)
-},' FlowLayoutOptions');
+}, " FlowLayoutOptions");
 
 module.exports.Options = FlowLayoutOptions;
 
@@ -33,36 +33,37 @@ function sanitizeOptions(opts) {
     var _width = opts.width;
     var _height = opts.height;
 
-    if(opts.flowDirection != "ScrollDirectionTypeVertical" && opts.flowDirection != "ScrollDirectionTypeHorizontal") {
+    if (opts.flowDirection != "ScrollDirectionTypeVertical" && opts.flowDirection != "ScrollDirectionTypeHorizontal") {
         throw "Unsupported flow direction";
     }
-    if(!opts.itemSize || Geometry.isSizeZero(opts.itemSize)) {
+    if (!opts.itemSize || Geometry.isSizeZero(opts.itemSize)) {
         throw "Non uniform item size is not implemented."
     }
-    if(opts.itemSize) {
+    if (opts.itemSize) {
         Geometry.DataTypes.Size.is(opts.itemSize);
         _itemSize = opts.itemSize;
     }
-    if(opts.sectionInsets) {
+    if (opts.sectionInsets) {
         Kit.DataTypes.EdgeInsets.is(opts.sectionInsets);
         _sectionInsets = opts.sectionInsets;
     }
-    if(opts.flowDirection == "ScrollDirectionTypeVertical") {
+    if (opts.flowDirection == "ScrollDirectionTypeVertical") {
         _constrainedHeightOrWidth = opts.width;
 
-    } else if (opts.flowDirection == "ScrollDirectionTypeHorizontal") {
+    }
+    else if (opts.flowDirection == "ScrollDirectionTypeHorizontal") {
         _constrainedHeightOrWidth = opts.height;
     }
-    if(opts.minimumInteritemSpacing) {
+    if (opts.minimumInteritemSpacing) {
         _minInteritemSpacing = opts.minimumInteritemSpacing;
     }
-    if(opts.minimumLineSpacing) {
+    if (opts.minimumLineSpacing) {
         _minLineSpacing = opts.minimumLineSpacing;
     }
-    if(opts.headerReferenceSize && Geometry.DataTypes.Size.is(opts.headerReferenceSize)) {
+    if (opts.headerReferenceSize && Geometry.DataTypes.Size.is(opts.headerReferenceSize)) {
         _headerReferenceSize = opts.headerReferenceSize;
     }
-    if(opts.footerReferenceSize && Geometry.DataTypes.Size.is(opts.footerReferenceSize)) {
+    if (opts.footerReferenceSize && Geometry.DataTypes.Size.is(opts.footerReferenceSize)) {
         _footerReferenceSize = opts.footerReferenceSize;
     }
 

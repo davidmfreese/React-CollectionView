@@ -1,9 +1,9 @@
-var t = require('tcomb-validation');
+var t = require("tcomb-validation");
 
-var Geometry = require('JSCoreGraphics').CoreGraphics.Geometry;
-var Foundation = require('JSCoreGraphics').Foundation;
-var Kit = require('JSCoreGraphics').Kit;
-var CollectionViewLayoutAttributes = require('../../Layout/CollectionViewLayoutAttributes');
+var Geometry = require("JSCoreGraphics").CoreGraphics.Geometry;
+var Foundation = require("JSCoreGraphics").Foundation;
+var Kit = require("JSCoreGraphics").Kit;
+var CollectionViewLayoutAttributes = require("../../Layout/CollectionViewLayoutAttributes");
 
 var HorizontalSectionLayoutDetails = t.struct({
     Frame: Geometry.DataTypes.Rect,
@@ -17,7 +17,7 @@ var HorizontalSectionLayoutDetails = t.struct({
     SectionInsets: Kit.DataTypes.EdgeInsets,
     HeaderReferenceSize: Geometry.DataTypes.Size,
     FooterReferenceSize: Geometry.DataTypes.Size
-}, 'SectionLayoutDetails');
+}, "SectionLayoutDetails");
 
 HorizontalSectionLayoutDetails.prototype.getEstimatedColumnForPoint = function (point) {
     //zero based
@@ -76,10 +76,10 @@ function getSections(rect, sectionsLayoutDetails) {
     var endSection = -1;
 
     var numberOfSections = sectionsLayoutDetails.length;
-    for(var i = 0; i < numberOfSections; i++) {
+    for (var i = 0; i < numberOfSections; i++) {
         var layout = sectionsLayoutDetails[i];
 
-        if(Geometry.rectIntersectsRect(rect, layout.Frame) || Geometry.rectIntersectsRect(layout.Frame, rect)) {
+        if (Geometry.rectIntersectsRect(rect, layout.Frame) || Geometry.rectIntersectsRect(layout.Frame, rect)) {
             sections.push(i);
         }
     }
@@ -92,26 +92,26 @@ function layoutAttributesForItemAtIndexPath(indexPath, sectionLayoutInfo, itemSi
 
     var column = sectionLayoutInfo.getColumnForIndex(indexPath);
     var x = sectionLayoutInfo.Frame.origin.x + column * sectionLayoutInfo.ColumnWidth + sectionLayoutInfo.MinimumInteritemSpacing * (column);
-    x +=  + sectionLayoutInfo.HeaderReferenceSize.width + sectionLayoutInfo.SectionInsets.left;
+    x += sectionLayoutInfo.HeaderReferenceSize.width + sectionLayoutInfo.SectionInsets.left;
 
     var row = indexPath.row % sectionLayoutInfo.NumberOfRows;
     var y = row * sectionLayoutInfo.RowHeight + row * sectionLayoutInfo.ActualLineSpacing;
-    + sectionLayoutInfo.SectionInsets.top;
+    y += sectionLayoutInfo.SectionInsets.top;
     var origin = new Geometry.DataTypes.Point({x: x, y: y});
     var size = new Geometry.DataTypes.Size({height: itemSize.height, width: itemSize.width});
     var frame = new Geometry.DataTypes.Rect({origin: origin, size: size});
 
     var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
-        "indexPath": indexPath,
-        "representedElementCategory": function(){
+        indexPath: indexPath,
+        representedElementCategory: function () {
             return "CollectionElementTypeCell";
         },
-        "representedElementKind": function(){
+        representedElementKind: function () {
             return "default"
         },
-        "frame": frame,
-        "size": size,
-        "hidden": false
+        frame: frame,
+        size: size,
+        hidden: false
     });
 
     return layoutAttributes;
@@ -120,40 +120,47 @@ function layoutAttributesForItemAtIndexPath(indexPath, sectionLayoutInfo, itemSi
 function layoutAttributesForSupplementaryView(indexPath, sectionLayoutInfo, kind) {
     var layoutAttributes = null;
 
-    if(kind == "header") {
+    if (kind == "header") {
         var frame = new Geometry.DataTypes.Rect({
             origin: new Geometry.DataTypes.Point({x: sectionLayoutInfo.Frame.origin.x, y: 0}),
-            size: new Geometry.DataTypes.Size({height: sectionLayoutInfo.HeaderReferenceSize.height, width: sectionLayoutInfo.HeaderReferenceSize.width})
+            size: new Geometry.DataTypes.Size({
+                height: sectionLayoutInfo.HeaderReferenceSize.height,
+                width: sectionLayoutInfo.HeaderReferenceSize.width
+            })
         });
         var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
-            "indexPath": indexPath,
-            "representedElementCategory": function(){
+            indexPath: indexPath,
+            representedElementCategory: function () {
                 return "CollectionElementTypeSupplementaryView";
             },
-            "representedElementKind": function(){
+            representedElementKind: function () {
                 return kind.toString();
             },
-            "frame": frame,
-            "size": frame.size,
-            "hidden": false
+            frame: frame,
+            size: frame.size,
+            hidden: false
         });
-    } else if(kind == "footer") {
+    }
+    else if (kind == "footer") {
         var x = sectionLayoutInfo.Frame.origin.x + sectionLayoutInfo.Frame.size.width - sectionLayoutInfo.FooterReferenceSize.width;
         var frame = new Geometry.DataTypes.Rect({
             origin: new Geometry.DataTypes.Point({x: x, y: 0}),
-            size: new Geometry.DataTypes.Size({height: sectionLayoutInfo.FooterReferenceSize.height, width: sectionLayoutInfo.FooterReferenceSize.width})
+            size: new Geometry.DataTypes.Size({
+                height: sectionLayoutInfo.FooterReferenceSize.height,
+                width: sectionLayoutInfo.FooterReferenceSize.width
+            })
         });
         var layoutAttributes = new CollectionViewLayoutAttributes.Protocol({
-            "indexPath": indexPath,
-            "representedElementCategory": function(){
+            indexPath: indexPath,
+            representedElementCategory: function () {
                 return "CollectionElementTypeSupplementaryView";
             },
-            "representedElementKind": function(){
+            representedElementKind: function () {
                 return kind;
             },
-            "frame": frame,
-            "size": frame.size,
-            "hidden": false
+            frame: frame,
+            size: frame.size,
+            hidden: false
         });
     }
 
