@@ -79,7 +79,7 @@ function getProps() {
 
     var infinityLoadMoreBuffer = collectionViewSize.height*1.5;
     var previousScrollPosition = new Models.Point({x: 0, y: 0});
-    var scrollViewDelegate = new rCV.ScrollViewDelegate.Protocol({
+    var scrollViewDelegate = new rCV.ScrollViewDelegate({
         "scrollViewDidScroll": function (scrollPosition) {
             var scrollTop = scrollPosition.y;
             var bottomOfContent = flowLayout.getCollectionViewContentSize.call(this, null);

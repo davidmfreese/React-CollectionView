@@ -6,10 +6,12 @@ var tReact = require('React-ScrollView')['tcomb-react'];
 var CollectionViewDatasource = require('./Datasource/CollectionViewDatasource');
 var CollectionViewDelegate = require('./CollectionViewDelegate');
 var CollectionViewLayout = require('./Layout/CollectionViewLayout');
-var ScrollViewDelegate = require('./ScrollView/ScrollViewDelegate');
-var ScrollView = require('./ScrollView/ScrollView');
+var ScrollViewDelegate = require('React-ScrollView').ScrollViewDelegate;
+var ScrollView = require('React-ScrollView').ScrollView;
+var ScrollDirections = require('React-ScrollView').Enums.ScrollDirections;
+var ScrollDirectionType = require('React-ScrollView').Enums.ScrollDirectionType;
+
 var Enums = require('./Enums/Enums');
-var Utils = require('./Utils/Utils');
 
 var Geometry = require('JSCoreGraphics').CoreGraphics.Geometry;
 var Foundation = require('JSCoreGraphics').Foundation;
@@ -19,12 +21,12 @@ var collectionViewProps = t.struct({
     frame: Geometry.DataTypes.Rect,
     collectionViewDelegate: CollectionViewDelegate.Protocol,
     collectionViewLayout: CollectionViewLayout.Protocol,
-    scrollViewDelegate: t.maybe(ScrollViewDelegate.Protocol),
+    scrollViewDelegate: t.maybe(ScrollViewDelegate),
     preloadPageCount: t.maybe(t.Num),
     invalidateLayout: t.maybe(t.Bool),
     resetScroll: t.maybe(t.Bool),
     paging: t.maybe(t.Bool),
-    pagingDirection: t.maybe(Enums.ScrollDirectionType),
+    pagingDirection: t.maybe(ScrollDirectionType),
 
     insertItemsAtIndexPaths: t.maybe(t.list(Foundation.DataTypes.IndexPath)),
     moveItemAtIndexPathToIndexPath: t.maybe(t.struct({
@@ -49,20 +51,11 @@ var collectionViewProps = t.struct({
         indexPath: Foundation.DataTypes.IndexPath,
         animated: t.Bool,
         scrollPositionType: Enums.ScrollPositionType
-    }))
+    })),
 
+    debugScroll: t.maybe(t.Bool)
 
 }, 'CollectionViewProps');
-
-var scrollDirType = {
-    None: 0,
-    Left: 1,
-    Up: 2,
-    Right: 3,
-    Down: 4
-};
-
-var debugScroll = Utils.Query.getQueryParamValue(document.location.search, 'debugScroll');
 
 var CollectionView = React.createClass({
     propTypes: tReact.react.toPropTypes(collectionViewProps),
@@ -86,7 +79,7 @@ var CollectionView = React.createClass({
             console.log('isTypeSafe<-->CollectionViewLayout: ' + CollectionViewLayout.Protocol.is(this.props.collectionViewLayout));
         }
         if (this.props.scrollViewDelegate) {
-            console.log('isTypeSafe<-->ScrollViewDelegate: ' + ScrollViewDelegate.Protocol.is(this.props.scrollViewDelegate));
+            console.log('isTypeSafe<-->ScrollViewDelegate: ' + ScrollViewDelegate.is(this.props.scrollViewDelegate));
         }
 
         var defaultBlockSize = this.props.frame.size;
@@ -202,24 +195,31 @@ var CollectionView = React.createClass({
         if(children.length == 0) {
             children.push(React.DOM.div());
         }
-        var that = this;
         var scrollViewProps = {
             ref: "scrollView",
             content: children,
-            scrollViewDelegate: that,
+            scrollViewDelegate: this.createScrollViewDelegate(),
             frame: this.props.frame,
             contentSize: this.state.collectionViewContentSize,
             scrollTimeout: 100,
             shouldUpdate: true,
             paging: this.props.paging ? this.props.paging : false,
             pagingDirection: this.props.pagingDirection ? this.props.pagingDirection : "ScrollDirectionTypeHorizontal",
-            debugScroll: debugScroll
+            debugScroll: this.props.debugScroll ? true : false
         };
 
         return React.createElement(ScrollView, scrollViewProps);
 
     },
 
+    createScrollViewDelegate: function() {
+        return new ScrollViewDelegate({
+            scrollViewDidScroll: this.scrollViewDidScroll,
+            scrollViewDidScrollToTop: this.scrollViewDidScrollToTop,
+            scrollViewDidEndScrollingAnimation: this.scrollViewDidEndScrollingAnimation,
+            scrollViewDidEndDecelerating: this.scrollViewDidEndDecelerating
+        });
+    },
     scrollViewDidScroll: function(scrollPosition) {
         if(this.props.scrollViewDelegate != null && this.props.scrollViewDelegate.scrollViewDidScroll != null) {
             this.props.scrollViewDelegate.scrollViewDidScroll(scrollPosition);
@@ -315,13 +315,13 @@ var CollectionView = React.createClass({
         var scrollRightThreshold = Geometry.rectGetMaxX(previousLoadedRect) - frame.size.width*preloadPageCount;
 
         var redraw = false;
-        if(scrollDirections.indexOf(scrollDirType.Up) != -1 && scrollPosition.y < scrollUpThreshold) {
+        if(scrollDirections.indexOf(ScrollDirections.Up) != -1 && scrollPosition.y < scrollUpThreshold) {
             redraw = true;
-        } else if(scrollDirections.indexOf(scrollDirType.Down) != -1  && scrollPosition.y > scrollDownThreshold) {
+        } else if(scrollDirections.indexOf(ScrollDirections.Down) != -1  && scrollPosition.y > scrollDownThreshold) {
             redraw = true;
-        } else if(scrollDirections.indexOf(scrollDirType.Left) != -1  && scrollPosition.x < scrollLeftThreshold) {
+        } else if(scrollDirections.indexOf(ScrollDirections.Left) != -1  && scrollPosition.x < scrollLeftThreshold) {
             redraw = true;
-        } else if(scrollDirections.indexOf(scrollDirType.Right) != -1  && scrollPosition.x > scrollRightThreshold) {
+        } else if(scrollDirections.indexOf(ScrollDirections.Right) != -1  && scrollPosition.x > scrollRightThreshold) {
             redraw = true;
         }
 

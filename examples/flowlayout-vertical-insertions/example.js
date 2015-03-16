@@ -49,7 +49,7 @@ function loadNext(){
 
 //ScrollViewDelegate
 var stop = false;
-var scrollViewDelegate = new rCV.ScrollViewDelegate.Protocol({
+var scrollViewDelegate = new rCV.ScrollViewDelegate({
     "scrollViewDidScroll": function (scrollPosition) {
         var scrollTop = scrollPosition.y;
         if (scrollTop == 0) {

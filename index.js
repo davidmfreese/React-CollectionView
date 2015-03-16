@@ -5,7 +5,7 @@ var CollectionViewDatasource = require('./src/react/Datasource/CollectionViewDat
 var CollectionViewLayout = require('./src/react/Layout/CollectionViewLayout');
 var CollectionViewLayoutDelegate = require('./src/react/Layout/CollectionViewLayoutDelegate');
 var CollectionViewLayoutAttributes = require('./src/react/Layout/CollectionViewLayoutAttributes');
-var ScrollViewDelegate = require('./src/react/ScrollView/ScrollViewDelegate');
+var ScrollViewDelegate = require('React-ScrollView').ScrollViewDelegate;
 
 //impl
 var CollectionViewFlowLayout = require('./src/react/Layout/FlowLayout/CollectionViewFlowLayout');

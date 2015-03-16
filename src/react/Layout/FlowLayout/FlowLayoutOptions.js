@@ -4,9 +4,10 @@ var Geometry = require('JSCoreGraphics').CoreGraphics.Geometry;
 var Foundation = require('JSCoreGraphics').Foundation;
 var Kit = require('JSCoreGraphics').Kit;
 var Enums = require('../../Enums/Enums');
+var ScrollDirectionType = require('React-ScrollView').Enums.ScrollDirectionType;
 
 var FlowLayoutOptions = t.struct({
-    flowDirection: Enums.ScrollDirectionType,
+    flowDirection: ScrollDirectionType,
     width: t.Num,
     height: t.Num,
     minimumLineSpacing: t.maybe(t.Num),
