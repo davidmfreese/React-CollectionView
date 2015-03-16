@@ -1,6 +1,6 @@
 var React = require('react/addons');
 var t = require('tcomb-validation');
-var tReact = require('tcomb-react');
+var tReact = require('React-ScrollView')['tcomb-react'];
 
 var CAAnimation = require("../Animations/CAAnimation");
 var ScrollViewDelegate = require('./ScrollViewDelegate');

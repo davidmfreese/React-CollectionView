@@ -1,7 +1,7 @@
 /** @jsx React.DOM */
 var React = require('react/addons');
 var t = require('tcomb-validation');
-var tReact = require('tcomb-react');
+var tReact = require('React-ScrollView')['tcomb-react'];
 
 var CollectionViewDatasource = require('./Datasource/CollectionViewDatasource');
 var CollectionViewDelegate = require('./CollectionViewDelegate');

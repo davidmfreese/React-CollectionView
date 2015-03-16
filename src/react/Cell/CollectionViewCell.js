@@ -1,5 +1,5 @@
 var t = require('tcomb-validation');
-var tReact = require('tcomb-react');
+var tReact = require('React-ScrollView')['tcomb-react'];
 var React = require('react');
 
 var CollectionViewLayoutAttributes = require('../Layout/CollectionViewLayoutAttributes');
