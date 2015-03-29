@@ -23,18 +23,6 @@ function SimpleCellFactory(data) {
                 backgroundColor: "white"
             };
 
-            if(this.selected) {
-                positionStyle["msTransform"] = "rotate(20deg)";
-                positionStyle["WebKitTransform"] = "rotate(20deg)";
-                positionStyle["transform"] = "rotate(20deg)";
-                positionStyle["zIndex"] = 1000;
-                positionStyle["backgroundColor"] = "yellow"
-                positionStyle.left = positionStyle.left - positionStyle.width*.10;
-                positionStyle.top = positionStyle.top - positionStyle.height*.10;
-                positionStyle.height = positionStyle.height*1.20;
-                positionStyle.width = positionStyle.width*1.20;
-            }
-
             var cellStyle = {
                 "text-align": "center",
                 "margin-top": positionStyle.height/2 - 10

@@ -25,7 +25,7 @@ function SimpleCellFactory(data) {
 
             if(this.selected) {
                 positionStyle["msTransform"] = "rotate(20deg)";
-                positionStyle["WebKitTransform"] = "rotate(20deg)";
+                positionStyle["WebkitTransform"] = "rotate(20deg)";
                 positionStyle["transform"] = "rotate(20deg)";
                 positionStyle["zIndex"] = 1000;
                 positionStyle["backgroundColor"] = "yellow"
