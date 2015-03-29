@@ -10,6 +10,8 @@ var ScrollViewDelegate = require("React-ScrollView").ScrollViewDelegate;
 var ScrollView = require("React-ScrollView").ScrollView;
 var ScrollDirections = require("React-ScrollView").Enums.ScrollDirections;
 var ScrollDirectionType = require("React-ScrollView").Enums.ScrollDirectionType;
+var GestureRecognizerMixin = new require("React-GestureRecognizer").GestureRecognizerMixin();
+var TapGestureRecognizer = require("React-GestureRecognizer").Recognizers.TapGestureRecognizer;
 
 var Enums = require("./Enums/Enums");
 
@@ -58,14 +60,20 @@ var collectionViewProps = t.struct({
 }, "CollectionViewProps");
 
 var CollectionView = React.createClass({
+    mixins: [GestureRecognizerMixin],
     propTypes: tReact.react.toPropTypes(collectionViewProps),
     getInitialState: function () {
         return {
             collectionViewContentSize: Geometry.Constants.sizeZero,
             currentLoadedRect: Geometry.Constants.rectZero,
             frame: Geometry.Constants.rectZero,
-            layoutAttributes: []
+            layoutAttributes: [],
+            selectedIndexPath: undefined
         };
+    },
+    componentWillMount: function() {
+        this.gestureRecognizers = [];
+        this.shouldAllowTouchToBubble = true;
     },
     componentDidMount: function () {
         console.log("isTypeSafe<-->CollectionViewDatasource: " + CollectionViewDatasource.Protocol.is(this.props.collectionViewDatasource));
@@ -108,7 +116,15 @@ var CollectionView = React.createClass({
             self.setStateFromScrollPosition(Geometry.Constants.pointZero, true);
             console.log("prepareLayout completed");
         });
+
+        //Gesture Recognizer
+        this.shouldHandleTouchGestures = true;
+        this.shouldHandleMouseGestures = true;
+        var tapGestureRecognizer = new TapGestureRecognizer();
+        tapGestureRecognizer.addTargetForCallback(this.getDOMNode(), this.handleTapGesture);
+        this.gestureRecognizers.push(tapGestureRecognizer);
     },
+
     shouldComponentUpdate: function (nextProps, nextState) {
         var newLayouts = nextState.layoutAttributes;
         var oldLayouts = this.state.layoutAttributes;
@@ -118,6 +134,8 @@ var CollectionView = React.createClass({
         var newContentSize = nextState.collectionViewContentSize;
         var oldIsScrolling = this.state.isScrolling;
         var newIsScrolling = nextState.isScrolling;
+        var oldSelectedIndex = this.state.selectedIndexPath;
+        var newSelectedIndex = nextState.selectedIndexPath;
 
         var shouldUpdate = false;
         if (nextProps && nextProps.invalidateLayout && nextProps.collectionViewLayout) {
@@ -181,12 +199,22 @@ var CollectionView = React.createClass({
         else if (this.refs["scrollView"].state.animatingToScrollPosition) {
             shouldUpdate = false;
         }
+        else if (oldSelectedIndex == null && newSelectedIndex != null) {
+            shouldUpdate = true;
+        }
+        else if (oldSelectedIndex != null && newSelectedIndex == null) {
+            shouldUpdate = true;
+        }
+        else if (oldSelectedIndex != null && newSelectedIndex != null && (oldSelectedIndex.section != newSelectedIndex.section || oldSelectedIndex.row != newSelectedIndex.row )) {
+            shouldUpdate = true;
+        }
 
         return shouldUpdate;
     },
     render: function () {
         var children = [];
         var layoutAttributes = this.state.layoutAttributes;
+        var selectedIndexPath = this.state.selectedIndexPath;
         for (var i = 0; i < layoutAttributes.length; i++) {
             var attributes = layoutAttributes[i];
             var category = attributes.representedElementCategory.call(this, null);
@@ -200,6 +228,9 @@ var CollectionView = React.createClass({
             else { //for now default to cell
                 var cell = this.props.collectionViewDatasource.cellForItemAtIndexPath(attributes.indexPath);
                 cell.applyLayoutAttributes(attributes);
+                if(selectedIndexPath && selectedIndexPath.row == attributes.indexPath.row && selectedIndexPath.section == attributes.indexPath.section) {
+                    cell.selected = true;
+                }
                 var CellContentView = cell.getContentView();
                 children.push(CellContentView);
             }
@@ -380,6 +411,65 @@ var CollectionView = React.createClass({
         }
 
         return indexPathsForVisibleItemsArray;
+    },
+
+    handleTapGesture: function(gestureRecognizer) {
+        var state = gestureRecognizer.getState();
+        if(state == "Ended" && gestureRecognizer.getNumberOfTaps() == 1 && gestureRecognizer.getNumberOfTouches() == 1) {
+            var touch = gestureRecognizer.getTouches()[0];
+            var scrollTop = this.refs["scrollView"].getDOMNode().scrollTop;
+            var scrollLeft = this.refs["scrollView"].getDOMNode().scrollLeft;
+            var rect = new Geometry.DataTypes.Rect({
+                origin: new Geometry.DataTypes.Point({
+                    x: scrollLeft + touch.lastLocation.x - 5,
+                    y: scrollTop + touch.lastLocation.y - 5
+                }),
+                size: new Geometry.DataTypes.Size({
+                    width: 10,
+                    height: 10
+                })
+            });
+            var layoutAttributes = this.props.collectionViewLayout.layoutAttributesForElementsInRect(rect);
+            if(layoutAttributes && layoutAttributes.length > 0) {
+                var selectedIndexPath = layoutAttributes[0].indexPath;
+                var collectionViewDelegate = this.props.collectionViewDelegate;
+                var shouldSelectItemAtIndexPath = true;
+                if (collectionViewDelegate.shouldSelectItemAtIndexPath) {
+                    shouldSelectItemAtIndexPath = collectionViewDelegate.shouldSelectItemAtIndexPath(selectedIndexPath);
+                }
+
+                var oldSelectedIndexPath = this.state.selectedIndexPath;
+                var shouldDeselectItemAtIndexPath = true;
+                var isDeselect = false;
+                if(oldSelectedIndexPath != null && oldSelectedIndexPath.row == selectedIndexPath.row && oldSelectedIndexPath.section == selectedIndexPath.section) {
+                    isDeselect = true;
+                    shouldSelectItemAtIndexPath = false;
+
+                    if(collectionViewDelegate.shouldDeselectItemAtIndexPath) {
+                        shouldDeselectItemAtIndexPath = collectionViewDelegate.shouldDeselectItemAtIndexPath(oldSelectedIndexPath);
+                    }
+                }
+
+                if(shouldSelectItemAtIndexPath && !isDeselect) {
+                    this.setState({
+                        selectedIndexPath: selectedIndexPath
+                    }, function() {
+                        if(collectionViewDelegate.didSelectItemAtIndexPath && selectedIndexPath != null) {
+                            collectionViewDelegate.didSelectItemAtIndexPath(selectedIndexPath);
+                        }
+                    });
+                }
+                else if(shouldDeselectItemAtIndexPath && isDeselect) {
+                    this.setState({
+                        selectedIndexPath: undefined
+                    }, function() {
+                        if(collectionViewDelegate.didDeselectItemAtIndexPath && oldSelectedIndexPath != null) {
+                            collectionViewDelegate.didDeselectItemAtIndexPath(oldSelectedIndexPath);
+                        }
+                    });
+                }
+            }
+        }
     }
 });
 
