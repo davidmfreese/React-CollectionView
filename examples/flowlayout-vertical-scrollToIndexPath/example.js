@@ -5,11 +5,10 @@ var Models = Geometry.DataTypes;
 var EdgeInsets = rCV.JSCoreGraphics.Kit.DataTypes.EdgeInsets;
 var IndexPath = rCV.JSCoreGraphics.Foundation.DataTypes.IndexPath;
 
-var innerWidth = window.innerWidth;
-var cellWidth = Math.floor(innerWidth / 3);
-var collectionViewSize = new Models.Size({height: window.innerHeight, width:3*cellWidth});
-var cellSize = new Models.Size({height: cellWidth, width: cellWidth});
-
+var exampleUtils = exampleUtils();
+var sizes = exampleUtils.getCollectionViewSizes(false);
+var collectionViewSize = new Models.Size({height: sizes.window.height, width:sizes.window.width});
+var cellSize = new Models.Size({height: sizes.cellSize.height, width: sizes.cellSize.width});
 
 //Data
 var datasource = [];

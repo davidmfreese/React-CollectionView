@@ -4,12 +4,11 @@ var Geometry = rCV.JSCoreGraphics.CoreGraphics.Geometry;
 var Models = Geometry.DataTypes;
 var EdgeInsets = rCV.JSCoreGraphics.Kit.DataTypes.EdgeInsets;
 
-//Properties
-var innerWidth = window.innerWidth;
-var cellWidth = Math.floor(innerWidth / 3);
-var collectionViewSize = new Models.Size({height: window.innerHeight, width:3*cellWidth});
-var cellSize = new Models.Size({height: cellWidth, width: cellWidth});
-var sectionInsets = new EdgeInsets({top:10, left:10, bottom:10, right:10});
+var exampleUtils = exampleUtils();
+var sizes = exampleUtils.getCollectionViewSizes(false);
+var collectionViewSize = new Models.Size({height: sizes.window.height, width:sizes.window.width});
+var cellSize = new Models.Size({height: sizes.cellSize.height, width: sizes.cellSize.width});
+
 var frame = new Models.Rect({
     origin: new Models.Point({x:0, y:0}),
     size: collectionViewSize

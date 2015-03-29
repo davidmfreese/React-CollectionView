@@ -1,8 +1,8 @@
+
 //Create your cell style
 function SimpleCellFactory(data) {
     var _data = data;
     var _style = {};
-    var _cellFrame;
     var SimpleCell = new rCV.CollectionViewCell.Protocol({
         reuseIdentifier: "default",
         highlighted: false,
@@ -17,20 +17,20 @@ function SimpleCellFactory(data) {
                 height:attributes.frame.size.height,
                 width: attributes.frame.size.width
             };
-
-            _cellFrame = attributes.frame;
         },
         getContentView: function () {
             var cellStyle = {
                 "text-align": "center",
-                "margin-top": _cellFrame.size.height/2 - 10
+                "margin-top": cellSize.height/2 - 10
             };
             var Data = React.createElement('div', {style: cellStyle}, _data);
-            return React.createElement('div', {className:"simpleCell", style: _style}, Data);
+            var Border = React.createElement('div', {className:"simpleCell"}, Data);
+            return React.createElement('div', { style: _style}, Border);
         },
         setData: function (data) {
             _data = data;
         }
+
     });
 
     return SimpleCell;

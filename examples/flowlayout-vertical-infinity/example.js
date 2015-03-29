@@ -4,10 +4,10 @@ var React = rCV.React;
 var Models = rCV.JSCoreGraphics.CoreGraphics.Geometry.DataTypes;
 var EdgeInsets = rCV.JSCoreGraphics.Kit.DataTypes.EdgeInsets;
 
-var innerWidth = window.innerWidth;
-var cellWidth = Math.floor(innerWidth / 3);
-var collectionViewSize = new Models.Size({height: window.innerHeight, width:3*cellWidth});
-var cellSize = new Models.Size({height: cellWidth, width: cellWidth});
+var exampleUtils = exampleUtils();
+var sizes = exampleUtils.getCollectionViewSizes(false);
+var collectionViewSize = new Models.Size({height: sizes.window.height, width:sizes.window.width});
+var cellSize = new Models.Size({height: sizes.cellSize.height, width: sizes.cellSize.width});
 
 //Data
 var allData = [];
@@ -44,12 +44,8 @@ var frame = new Models.Rect({
 
 function getProps() {
     var datasourceDelegate = new rCV.CollectionViewDatasource.Protocol({
-        numberItemsInSection: function(indexPath) {
-            return datasource.length;
-        },
-        numberOfSectionsInCollectionView: function() {
-            return 1;
-        },
+        numberItemsInSection: function(indexPath) { return datasource.length; },
+        numberOfSectionsInCollectionView: function() { return 1; },
         cellForItemAtIndexPath: function(indexPath) {
             var cell = new SimpleCellFactory(datasource[indexPath.row]);
             return cell;
@@ -57,30 +53,18 @@ function getProps() {
     });
 
     var layoutDelegate = new rCV.CollectionViewLayoutDelegate.Protocol({
-        numberItemsInSection: function(indexPath) {
-            return datasource.length;
-        },
-        numberOfSectionsInCollectionView: function() {
-            return 1;
-        },
-        sizeForItemAtIndexPath: function(indexPath) {
-            return itemSize;
-        },
-        insetForSectionAtIndex: function(indexPath) {
-            return insets;
-        },
-        minimumLineSpacingForSectionAtIndex: function(indexPath) {
-            return 0;
-        },
-        shouldSelectItemAtIndexPath: function(indexPath) {
-            return false;
-        }
+        numberItemsInSection: function(indexPath) { return datasource.length; },
+        numberOfSectionsInCollectionView: function() { return 1; },
+        sizeForItemAtIndexPath: function(indexPath) { return itemSize; },
+        insetForSectionAtIndex: function(indexPath) { return insets; },
+        minimumLineSpacingForSectionAtIndex: function(indexPath) { return 0; },
+        shouldSelectItemAtIndexPath: function(indexPath) { return false; }
     });
 
     var infinityLoadMoreBuffer = collectionViewSize.height*1.5;
     var previousScrollPosition = new Models.Point({x: 0, y: 0});
     var scrollViewDelegate = new rCV.ScrollViewDelegate({
-        "scrollViewDidScroll": function (scrollPosition) {
+        scrollViewDidScroll: function (scrollPosition) {
             var scrollTop = scrollPosition.y;
             var bottomOfContent = flowLayout.getCollectionViewContentSize.call(this, null);
             if (scrollTop > previousScrollPosition.y && scrollTop + infinityLoadMoreBuffer + collectionViewSize.height > bottomOfContent.height) {
