@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <link href="example.css" type="text/css" rel="stylesheet" />
+    <script src="../../dist/react-collectionview-standalone.js"></script>
+
+</head>
+<body>
+    <div id="reactContainer"></div>
+    <div style="position:absolute;width:500px; height:40px;background-color: lightgray; padding-top:12px">
+        <label>index: </label>
+        <input type="text" value="10" id="nextIndexRow" />
+        <label>animated: </label>
+        <input type="checkbox" id="shouldAnimate"/>
+        <input type="button" value="Scroll To Index" id="scrollToIndex"/>
+    </div>
+    <script src="cellFactory.js"/></script>
+    <script src="example.js" ></script>
+</body>
+</html>

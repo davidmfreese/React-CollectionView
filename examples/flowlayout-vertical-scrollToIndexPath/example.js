@@ -3,6 +3,7 @@ var React = rCV.React;
 var Geometry = rCV.JSCoreGraphics.CoreGraphics.Geometry;
 var Models = Geometry.DataTypes;
 var EdgeInsets = rCV.JSCoreGraphics.Kit.DataTypes.EdgeInsets;
+var IndexPath = rCV.JSCoreGraphics.Foundation.DataTypes.IndexPath;
 
 var innerWidth = window.innerWidth;
 var cellWidth = Math.floor(innerWidth / 3);
@@ -12,7 +13,7 @@ var cellSize = new Models.Size({height: cellWidth, width: cellWidth});
 
 //Data
 var datasource = [];
-for(var i = 1; i <= 1000000; i++) {
+for(var i = 0; i < 10000; i++) {
     datasource.push("Item: " + i);
 }
 
@@ -65,6 +66,24 @@ var props = {
     collectionViewLayout: flowLayout
 };
 
-var collectionView = React.createElement(rCV.CollectionView.View, props);
+function render() {
+    var collectionView = React.createElement(rCV.CollectionView.View, props);
+    React.render(collectionView, document.getElementById("reactContainer"));
+}
 
-React.render(collectionView, document.getElementById('reactContainer'));
+render();
+
+function onScrollToIndex() {
+    props.scrollToItemAtIndexPath = {
+        indexPath: new IndexPath({
+            row: Number(document.getElementById("nextIndexRow").value),
+            section: 0
+        }),
+        animated: document.getElementById("shouldAnimate").checked,
+        scrollPositionType: "CenteredVertically"
+    }
+
+    render();
+}
+
+document.getElementById("scrollToIndex").addEventListener("click", onScrollToIndex);

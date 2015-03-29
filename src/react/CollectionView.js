@@ -136,6 +136,7 @@ var CollectionView = React.createClass({
         var newIsScrolling = nextState.isScrolling;
         var oldSelectedIndex = this.state.selectedIndexPath;
         var newSelectedIndex = nextState.selectedIndexPath;
+        var scrollToItemAtIndexPath = nextProps.scrollToItemAtIndexPath;
 
         var shouldUpdate = false;
         if (nextProps && nextProps.invalidateLayout && nextProps.collectionViewLayout) {
@@ -207,6 +208,37 @@ var CollectionView = React.createClass({
         }
         else if (oldSelectedIndex != null && newSelectedIndex != null && (oldSelectedIndex.section != newSelectedIndex.section || oldSelectedIndex.row != newSelectedIndex.row )) {
             shouldUpdate = true;
+        }
+        else if (scrollToItemAtIndexPath) {
+            nextProps.scrollToItemAtIndexPath = undefined;
+            var scrollView = this.refs["scrollView"];
+            var layoutAttributes = this.props.collectionViewLayout.layoutAttributesForItemAtIndexPath(scrollToItemAtIndexPath.indexPath);
+            var x = layoutAttributes.frame.origin.x;
+            var y = layoutAttributes.frame.origin.y;
+            if(scrollToItemAtIndexPath.scrollPositionType == "CenteredVertically") {
+                y -= nextProps.frame.size.height/2 - layoutAttributes.frame.size.height/2;
+                if(y < 0) {
+                    y = 0;
+                } else if(y > this.state.collectionViewContentSize.height) {
+                    y = this.state.collectionViewContentSize.height;
+                }
+            } else if(scrollToItemAtIndexPath.scrollPositionType == "CenteredHorizontally") {
+                x -= nextProps.frame.size.width/2 - layoutAttributes.frame.size.width/2;
+                if(x < 0) {
+                    x = 0;
+                } else if(x > this.state.collectionViewContentSize.width) {
+                    x = this.state.collectionViewContentSize.width;
+                }
+            }
+
+            if(scrollView && layoutAttributes) {
+
+                var scrollPoint = new Geometry.DataTypes.Point({
+                    x: x,
+                    y: y
+                });
+                scrollView.scrollTo(scrollPoint, scrollToItemAtIndexPath.animated);
+            }
         }
 
         return shouldUpdate;
