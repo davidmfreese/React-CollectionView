@@ -502,6 +502,77 @@ var CollectionView = React.createClass({
                 }
             }
         }
+    },
+
+    //Public
+    scrollToItemAtIndexPath: function(indexPath, animated, scrollPositionType) {
+        var scrollView = this.refs["scrollView"];
+        var layoutAttributes = this.props.collectionViewLayout.layoutAttributesForItemAtIndexPath(indexPath);
+        var x = layoutAttributes.frame.origin.x;
+        var y = layoutAttributes.frame.origin.y;
+        if (scrollPositionType == "CenteredVertically") {
+            y -= this.props.frame.size.height / 2 - layoutAttributes.frame.size.height / 2;
+            if (y < 0) {
+                y = 0;
+            } else if (y > this.state.collectionViewContentSize.height) {
+                y = this.state.collectionViewContentSize.height;
+            }
+        } else if (scrollPositionType == "CenteredHorizontally") {
+            x -= this.props.frame.size.width / 2 - layoutAttributes.frame.size.width / 2;
+            if (x < 0) {
+                x = 0;
+            } else if (x > this.state.collectionViewContentSize.width) {
+                x = this.state.collectionViewContentSize.width;
+            }
+        }
+
+        if (scrollView && layoutAttributes) {
+
+            var scrollPoint = new Geometry.DataTypes.Point({
+                x: x,
+                y: y
+            });
+            scrollView.scrollTo(scrollPoint, animated);
+        }
+    },
+
+    invalidateLayout: function(resetScroll) {
+        var self = this;
+        console.log("prepareLayout");
+        this.props.collectionViewLayout.prepareLayout.call(this, function (success) {
+            var scrollPostion = self.refs["scrollView"].state.scrollPosition;
+
+            if (resetScroll) {
+                scrollPostion = Geometry.Constants.pointZero;
+            }
+            var newRect = self.getRectForScrollPosition(scrollPostion);
+            var layoutAttributes = self.props.collectionViewLayout.layoutAttributesForElementsInRect(newRect);
+            var collectionViewContentSize = self.props.collectionViewLayout.getCollectionViewContentSize(null);
+
+            if (resetScroll) {
+                self.setState({
+                    scrollPosition: scrollPostion,
+                    currentLoadedRect: newRect,
+                    layoutAttributes: layoutAttributes,
+                    collectionViewContentSize: collectionViewContentSize
+                });
+            }
+            else { //don"t set the scrollPosition if not reseting as might not be valid anymore
+                self.setState({
+                    currentLoadedRect: newRect,
+                    layoutAttributes: layoutAttributes,
+                    collectionViewContentSize: collectionViewContentSize
+                });
+            }
+            self.forceUpdate(function() {
+                var scrollPoint = new Geometry.DataTypes.Point({
+                    x: 0,
+                    y: 0
+                });
+                self.refs["scrollView"].scrollTo(scrollPoint, false);
+            });
+            console.log("prepareLayout completed");
+        });
     }
 });
 
