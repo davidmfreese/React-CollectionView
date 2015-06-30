@@ -179,6 +179,9 @@ var CollectionView = React.createClass({
         else if (nextProps && nextProps.forceUpdate) {
             shouldUpdate = true;
         }
+        else if(nextProps.collectionViewLayout != this.props.collectionViewLayout) {
+            shouldUpdate = true;
+        }
         else if (oldLayouts == null && newLayouts != null) {
             shouldUpdate = true;
         }
@@ -536,7 +539,7 @@ var CollectionView = React.createClass({
         }
     },
 
-    invalidateLayout: function(resetScroll) {
+    invalidateLayout: function(resetScroll, callback) {
         var self = this;
         console.log("prepareLayout");
         this.props.collectionViewLayout.prepareLayout.call(this, function (success) {
@@ -555,6 +558,13 @@ var CollectionView = React.createClass({
                     currentLoadedRect: newRect,
                     layoutAttributes: layoutAttributes,
                     collectionViewContentSize: collectionViewContentSize
+                }, function() {
+                    self.forceUpdate(function () {
+                        self.refs["scrollView"].scrollTo(scrollPostion, false);
+                        if (callback) {
+                            callback("success");
+                        }
+                    })
                 });
             }
             else { //don"t set the scrollPosition if not reseting as might not be valid anymore
@@ -562,15 +572,15 @@ var CollectionView = React.createClass({
                     currentLoadedRect: newRect,
                     layoutAttributes: layoutAttributes,
                     collectionViewContentSize: collectionViewContentSize
+                }, function() {
+
+                    self.forceUpdate(function () {
+                        if (callback) {
+                            callback("success");
+                        }
+                    })
                 });
             }
-            self.forceUpdate(function() {
-                var scrollPoint = new Geometry.DataTypes.Point({
-                    x: 0,
-                    y: 0
-                });
-                self.refs["scrollView"].scrollTo(scrollPoint, false);
-            });
             console.log("prepareLayout completed");
         });
     }
