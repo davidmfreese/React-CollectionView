@@ -19,4 +19,4 @@ This has been moved to a seperate project.  See [React-ScrollView](http://github
 ### Gesture Recognizer Mixin
 This has been moved to a seperate project.  See [React-GestureRecognizerMixin](http://github.com/davidmfreese/React-GestureRecognizerMixin).
 
-**WARNING** - This project is young and being developed in short iterations.  There will be many breaking changes in the short term.  
+**WARNING** - This is a personal project to push the performance limits of React.  Use at your own risk :)
